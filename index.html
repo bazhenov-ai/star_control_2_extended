@@ -1,0 +1,3031 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Звёздная карта Star Control 2</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: #111;
+      color: #ddd;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      padding: 12px;
+    }
+    .main-container {
+      display: flex;
+      flex: 1;
+      gap: 12px;
+      min-height: 0;
+    }
+    #mapContainer {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: black;
+      border: 1px solid #222;
+    }
+    #starMap {
+      display: block;
+      background-color: black;
+      image-rendering: pixelated;
+      cursor: crosshair;
+    }
+    #sidePanel {
+      width: 240px;
+      padding: 12px;
+      border: 1px solid #222;
+      background: #0d0d0d;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+    #controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    label {
+      font-size: 14px;
+      display: block;
+      margin-bottom: 6px;
+    }
+    select, button {
+      padding: 6px 8px;
+      font-size: 14px;
+    }
+    .sectionTitle {
+      font-size: 13px;
+      color: #bbb;
+      margin-bottom: 6px;
+    }
+    #currentDate {
+      font-size: 14px;
+      color: #fff;
+      margin-bottom: 0px;
+    }
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 5px;
+    }
+    .completed {
+      color: #00ff00;
+    }
+
+    /* Стили для модальных окон */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+
+    .victory-content {
+        background: linear-gradient(135deg, #0d3b1a, #0a2e14);
+        margin: 15% auto;
+        padding: 30px;
+        border: 2px solid #00ff44;
+        border-radius: 15px;
+        width: 60%;
+        max-width: 500px;
+        text-align: center;
+        box-shadow: 0 0 30px #00ff44;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        position: relative;
+        animation: glow 2s ease-in-out infinite alternate;
+    }
+
+.warning-content {
+    background: linear-gradient(135deg, #3b2a0d, #2e220a);
+    margin: 15% auto;
+    padding: 30px;
+    border: 2px solid #ffa500;
+    border-radius: 15px;
+    width: 60%;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: 0 0 30px #ffa500;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    position: relative;
+    animation: glow-warning 2s ease-in-out infinite alternate;
+    }
+
+.defeat-content {
+    background: linear-gradient(135deg, #3b1a1a, #2e1414);
+    margin: 15% auto;
+    padding: 30px;
+    border: 2px solid #ff0000;
+    border-radius: 15px;
+    width: 60%;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: 0 0 30px #ff0000;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    position: relative;
+    animation: glow-defeat 2s ease-in-out infinite alternate;
+}
+
+    @keyframes glow {
+        from { box-shadow: 0 0 20px #00ff44; }
+        to { box-shadow: 0 0 40px #00ff44, 0 0 60px #00ff44; }
+    }
+
+    @keyframes glow-warning {
+        from { box-shadow: 0 0 20px #ffa500; }
+        to { box-shadow: 0 0 40px #ffa500, 0 0 60px #ffa500; }
+    }
+
+    @keyframes glow-defeat {
+        from { box-shadow: 0 0 20px #ff0000; }
+        to { box-shadow: 0 0 40px #ff0000, 0 0 60px #ff0000; }
+    }
+
+    .victory-title {
+        font-size: 28px;
+        color: #00ff44;
+        margin-bottom: 20px;
+        text-shadow: 0 0 10px #00ff44;
+    }
+
+    .warning-title {
+        font-size: 28px;
+        color: #ffa500;
+        margin-bottom: 20px;
+        text-shadow: 0 0 10px #ffa500;
+    }
+
+    .defeat-title {
+        font-size: 28px;
+        color: #ff0000;
+        margin-bottom: 20px;
+        text-shadow: 0 0 10px #ff0000;
+    }
+
+    .victory-message {
+        font-size: 20px;
+        margin-bottom: 25px;
+        line-height: 1.5;
+    }
+
+    .victory-button {
+        background: #00cc33;
+        color: #000;
+        border: none;
+        padding: 12px 30px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 18px;
+        margin: 10px 2px;
+        cursor: pointer;
+        border-radius: 8px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+
+    .victory-button:hover {
+        background: #00ff44;
+        box-shadow: 0 0 15px #00ff44;
+        transform: scale(1.05);
+    }
+
+    .next-button {
+        background: #00cc33;
+        color: #000;
+        border: none;
+        padding: 12px 30px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 10px 2px;
+        cursor: pointer;
+        border-radius: 8px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+
+    .next-button:hover {
+        background: #00ff44;
+        box-shadow: 0 0 15px #00ff44;
+        transform: scale(1.05);
+    }
+
+    @media (max-width: 1200px) {
+      .main-container {
+        flex-direction: column;
+      }
+      #sidePanel {
+        width: 100%;
+      }
+      #mapContainer {
+        min-height: 60vh;
+      }
+    }
+
+    #textPosition {
+      display: none;
+    }
+
+    .warning-button {
+        background: #ffcc00;
+        color: #000;
+        border: none;
+        padding: 12px 30px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 10px 2px;
+        cursor: pointer;
+        border-radius: 8px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+
+    .warning-button:hover {
+        background: #ffcc4d;
+        box-shadow: 0 0 15px #ffa500;
+        transform: scale(1.05);
+    }
+
+    @media (max-width: 1200px) {
+      .main-container {
+        flex-direction: column;
+      }
+      #sidePanel {
+        width: 100%;
+      }
+      #mapContainer {
+        min-height: 60vh;
+      }
+
+      /* Новые стили для кнопок на мобильных устройствах */
+      .button-row {
+        flex-direction: column;
+      }
+      .button-row button {
+        width: 100%;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <div id="mapContainer">
+      <canvas id="starMap"></canvas>
+    </div>
+
+    <div id="sidePanel">
+      <div id="controls">
+        <div>
+          <div id="currentDate" style="color: #FFFF00;">17 февраля 2155 года</div>
+        </div>
+
+<div style="display: flex; gap: 10px; width: 100%;">
+  <button id="nextTurnButton" class="next-button" style="flex: 1;">1 ход</button>
+  <button id="multiTurnButton" class="warning-button" style="flex: 1;">${MULTI_TURN_COUNT} ходов</button>
+</div>
+
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="createNewAlliance">
+            <label for="createNewAlliance" style="margin:0;font-size:14px;">Создание Нового Альянса</label>
+          </div>
+        </div>
+
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="allianceWithZoqFotPik">
+            <label for="allianceWithZoqFotPik" style="margin:0;font-size:14px;">Альянс с Zoq-Fot-Pik</label>
+          </div>
+        </div>
+
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="allianceWithOrz">
+            <label for="allianceWithOrz" style="margin:0;font-size:14px;">Альянс с Orz</label>
+          </div>
+        </div>
+
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="allianceWithSpathi">
+            <label for="allianceWithSpathi" style="margin:0;font-size:14px;">Альянс с Spathi</label>
+          </div>
+        </div>
+
+        <!-- Новый чекбокс для альянса с Black Squadron -->
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="allianceWithBlackSquadron">
+            <label for="allianceWithBlackSquadron" style="margin:0;font-size:14px;">Альянс с Black Squadron <a href="bss.txt" style="color: #FFFF00;" target="_blank"><b>???</b></a></label>
+          </div>
+        </div>
+
+        <!-- Новый чекбокс для починки Mother-Ark -->
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="motherArkRepair">
+            <label for="motherArkRepair" style="margin:0;font-size:14px;">Починка Mother-Ark</label>
+          </div>
+        </div>
+
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="allianceWithThraddash">
+            <label for="allianceWithThraddash" style="margin:0;font-size:14px;">Альянс с Thraddash</label>
+          </div>
+        </div>
+
+        <!-- Новый чекбокс для возврата флота Syreen -->
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="syreenFleetReturn">
+            <label for="syreenFleetReturn" style="margin:0;font-size:14px;">Возврат флота Syreen</label>
+          </div>
+        </div>
+
+        <!-- Новый чекбокс для засады Mycon -->
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="myconAmbush">
+            <label for="myconAmbush" style="margin:0;font-size:14px;">Засада для Mycon</label>
+          </div>
+        </div>
+
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="allianceWithSupoxUtwig">
+            <label for="allianceWithSupoxUtwig" style="margin:0;font-size:14px;">Альянс с Supox и Utwig</label>
+          </div>
+        </div>
+
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="shofixtiRevival">
+            <label for="shofixtiRevival" style="margin:0;font-size:14px;">Возрождение Shofixti</label>
+          </div>
+        </div>
+
+        <!-- Новый чекбокс для революции Yehat -->
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="yehatRebellion">
+            <label for="yehatRebellion" style="margin:0;font-size:14px;">Революция Yehat</label>
+          </div>
+        </div>
+
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="allianceWithChmmr">
+            <label for="allianceWithChmmr" style="margin:0;font-size:14px;">Альянс с Chmmr</label>
+          </div>
+        </div>
+
+        <!-- Новый чекбокс для снятия Earthling Slave Shield -->
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="earthlingShieldRemoval">
+            <label for="earthlingShieldRemoval" style="margin:0;font-size:14px;">Slave Shield Earthling</label>
+          </div>
+        </div>
+
+        <!-- Новый чекбокс для снятия Unzervalt Slave Shield -->
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="unzervaltShieldRemoval">
+            <label for="unzervaltShieldRemoval" style="margin:0;font-size:14px;">Slave Shield Unzervalt</label>
+          </div>
+        </div>
+
+        <!-- Новый чекбокс для снятия Syreen Slave Shield -->
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="syreenShieldRemoval">
+            <label for="syreenShieldRemoval" style="margin:0;font-size:14px;">Slave Shield Syreen</label>
+          </div>
+        </div>
+
+        <!-- Новый чекбокс для снятия Spathi Slave Shield -->
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="spathiShieldRemoval">
+            <label for="spathiShieldRemoval" style="margin:0;font-size:14px;">Slave Shield Spathi</label>
+          </div>
+        </div>
+
+        <!-- Новый чекбокс для атаки Thraddash -->
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="thraddashAttack">
+            <label for="thraddashAttack" style="margin:0;font-size:14px;">Атака Thraddash</label>
+          </div>
+        </div>
+
+        <!-- Новый чекбокс для атаки Ilwrath -->
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="ilwrathAttack">
+            <label for="ilwrathAttack" style="margin:0;font-size:14px;">Атака Ilwrath</label>
+          </div>
+        </div>
+
+        <!-- Новый чекбокс для атаки Supox и Utwig -->
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="supoxUtwigAttack">
+            <label for="supoxUtwigAttack" style="margin:0;font-size:14px;">Атака Supox и Utwig</label>
+          </div>
+        </div>
+
+        <!-- Новый чекбокс для атаки Альянса -->
+        <div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="allianceAttack">
+            <label for="allianceAttack" style="margin:0;font-size:14px;">Атака Альянса</label>
+          </div>
+        </div>
+
+        <div>
+          <div class="sectionTitle">Сферы влияния</div>
+          <select id="sphereType">
+            <option value="none">Нет</option>
+            <option value="newSpheres" selected>Игра</option>
+            <option value="initialNewSpheres">Star Control 2</option>
+            <option value="oldSpheres">Star Control 1</option>
+          </select>
+        </div>
+
+        <div>
+          <select id="textPosition">
+            <option value="auto" selected>Авто</option>
+            <option value="top">Сверху</option>
+            <option value="counterclockwise">Против часовой (45°)</option>
+            <option value="clockwise">По часовой (45°)</option>
+          </select>
+        </div>
+
+        <div>
+          <div class="sectionTitle" style="color: #FFFF00;"><b>Информация</b></div>
+          <div style="font-size:13px;color:#bbb;line-height:1.3;">
+            Сфера Нового Альянса это просто показатель объединённой мощи всех членов Альянса.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно победы -->
+  <div id="victoryModal" class="modal">
+      <div class="victory-content">
+          <div class="victory-title">🎉 ПОБЕДА! 🎉</div>
+          <div class="victory-message" id="victoryMessage"></div>
+          <button class="victory-button" onclick="closeVictoryModal()">Завершить игру</button>
+      </div>
+  </div>
+
+  <!-- Модальное окно предупреждения -->
+  <div id="warningModal" class="modal">
+      <div class="warning-content">
+          <div class="warning-title">⚠️ ПРЕДУПРЕЖДЕНИЕ! ⚠️</div>
+          <div class="victory-message" id="warningMessage"></div>
+          <button class="victory-button" onclick="closeWarningModal()">Понятно</button>
+      </div>
+  </div>
+
+  <!-- Модальное окно поражения -->
+  <div id="defeatModal" class="modal">
+      <div class="defeat-content">
+          <div class="defeat-title">💀 ПОРАЖЕНИЕ! 💀</div>
+          <div class="victory-message" id="defeatMessage"></div>
+<!--          <button class="victory-button" onclick="closeDefeatModal()">Завершить игру</button> -->
+          <a href="index.html" class="victory-button" target="_top">Начать заново</a>
+      </div>
+  </div>
+
+  <!-- Внешние файлы со звездами и сферами влияния -->
+  <script src="stars.js"></script>
+  <script src="spheres.js"></script>
+
+  <script>
+    // ========== КОНСТАНТЫ ДЛЯ НАСТРОЙКИ ==========
+
+    // === Игровые механики ===
+    // === Множественное прокручивание ходов ===
+    const DAYS_PER_TURN = 7; // Количество дней за один ход
+    const MULTI_TURN_COUNT = 10;
+    const DAYS_UNTIL_SPATHI_ESCAPE = 10; // Количество дней до бегства Spathi
+    const DAYS_UNTIL_PKUNK_REUNION = 120; // Количество дней до воссоединения Pkunk после революции Yehat
+
+    // === Марш смерти ===
+    const KOHRAH_VICTORY_WARNING = "Kohr-Ah победили в войне доктрин. Если не атаковать их сейчас, совсем скоро они получат контроль над Sa-Matra, и тогда уже ни что не сможет их остановить!";
+    const DEFEAT_MESSAGE = "Kohr-Ah получили контроль над Sa-Matra. Sa-Matra обладает такой мощью, что как бы мало врагов ни осталось, теперь уже ни что не сможет их остановить! Вы проиграли.";
+    const DAYS_UNTIL_DEATH_MARCH_STARTS = 30;
+
+    // === Сообщение о победе ===
+    const VICTORY_MESSAGE = "Свершилось! Альянс победил! Ur-Quan и Kohr-Ah поставлены на их эквиваленты коленей!";
+
+    // === Названия сфер ===
+    const BLACK_SQUADRON_NAME = "Black Squadron";
+    const NEW_ALLIANCE_NAME = "New Alliance";
+
+    // === Начальные радиусы сфер ===
+    const EARTHLING_INITIAL_RADIUS = 20;
+    const NEW_ALLIANCE_INITIAL_RADIUS = 20;
+    const YEHAY_REBEL_RADIUS = 53;
+    const MMRNMHRM_REVIVED_RADIUS = 10;
+    const SYREEN_INITIAL_RADIUS = 10;
+    const SHOFIXTI_REVIVED_RADIUS = 10;
+    const CHMMR_INITIAL_RADIUS = 125;
+    const YEHAY_REBEL_AFTER_REUNION_RADIUS = 100.3;
+
+    // === Изменения радиусов за ход ===
+    let UR_QUAN_RADIUS_CHANGE = -0.02;
+    let KOHR_AH_RADIUS_CHANGE = -0.011;
+    let SHOFIXTI_RADIUS_CHANGE = 0.01;
+    let MMRNMHRM_AREA_CHANGE = 1.79;
+
+    // === Увеличения радиусов при снятии щитов ===
+    const SYREEN_SHIELD_REMOVAL_RADIUS_INCREASE = 10;
+    const EARTHLING_SHIELD_REMOVAL_RADIUS_INCREASE = 40;
+
+    // === Spathi Slave Shield Constants ===
+    const SPATHI_SLAVE_SHIELD_RADIUS = 20;
+
+    // === Unzervalt Slave Shield Constants ===
+    const UNZERVALT_SLAVE_SHIELD_RADIUS = 40;
+    const UNZERVALT_SPHERE_NAME = "Unzervalt";
+    const UNZERVALT_CENTER_POSITION = [334.5, 193.1];
+
+    // === Боевые параметры ===
+    const SPHERE_MOVEMENT_SPEED = 2;
+    const SPHERE_DAMAGE_SPEED = 100;
+
+    // Атака Thraddash
+    const THRADDASH_ATTACK_DISTANCE = 160;
+    const THRADDASH_ATTACK_DAMAGE = 45;
+
+    // Атака Ilwrath
+    const ILWRATH_ATTACK_DISTANCE = 120;
+    const ILWRATH_ATTACK_DAMAGE = 0;
+
+    // Атака Supox и Utwig
+    const SUPOX_UTWIG_ATTACK_DISTANCE = 140;
+    const SUPOX_UTWIG_ATTACK_DAMAGE = 40;
+    const SUPOX_DAMAGE_REDUCTION_FACTOR = 3.3;
+
+    // Засада Mycon
+    const MYCON_AMBUSH_TARGET = [685.8, 57.7];
+    const MYCON_AMBUSH_DAMAGE = 60;
+
+    // Атака Альянса
+    const ALLIANCE_ATTACK_DISTANCE = 60;
+    const HIERARCHY_DAMAGE_FACTOR = 1.6;
+    const MIN_ALLY_RADIUS = 5;
+
+    // === Визуальные параметры ===
+    const BASE_MAP_SIZE = 1000;
+    const GRID_DIVISIONS = 20;
+    const STAR_HOVER_RADIUS = 12;
+    const STAR_LABEL_OFFSET = 10;
+    const SPHERE_LABEL_OFFSET = 10;
+    const STAR_HIGHLIGHT_MULTIPLIER = 4;
+    const STAR_NORMAL_MULTIPLIER = 3;
+
+    // Цвета
+    const COLOR_NEW_ALLIANCE = '#00FF00';
+    const COLOR_BLACK_SQUADRON = '#6f6f6f';
+    const COLOR_EARTHLING = '#FFFF00';
+
+    // === Параметры масштабирования и панорамирования ===
+    const MIN_SCALE = 0.2;
+    const MAX_SCALE = 5;
+    const ZOOM_STEP = 0.0005;
+
+    // === Координаты для новых сфер ===
+    const SYREEN_INITIAL_POSITION = [412.5, 377.0];
+
+    // Цвета звезд
+    const colors = {
+      Blue: ['#0000FF'],
+      White: ['#FFFFFF'],
+      Green: ['#00FF00'],
+      Yellow: ['#FFFF00'],
+      Orange: ['#FFA500'],
+      Red: ['#FF0000']
+    };
+
+    // ========== РЕФАКТОРИНГ: РАЗДЕЛЕНИЕ ДАННЫХ СФЕР ==========
+
+    // Исходные данные сфер (не изменяются)
+    let initialSphereData = {
+      none: [],
+      newSpheres: [],  // Исходные данные SC2
+      oldSpheres: []   // Исходные данные SC1
+    };
+
+    // Игровые данные сфер (изменяются в процессе игры)
+    let gameSpheres = [];
+
+    // Хранилище активных союзников New Alliance
+    let newAllianceAllies = {
+      ZoqFotPik: false,
+      Orz: false,
+      Spathi: false,
+      Thraddash: false,
+      Syreen: false,
+      SupoxUtwig: false,
+      Shofixti: false,
+      Chmmr: false,
+      BlackSquadron: false,
+      YehatRebel: false,
+      Mmrnmhrm: false,
+      Unzervalt: false
+    };
+
+    // Переменная для отслеживания даты заключения альянса с Spathi
+    let spathiAllianceDate = null;
+
+    // Переменная для отслеживания даты начала революции Yehat
+    let yehatRebellionDate = null;
+
+    // Состояние атаки Thraddash
+    let thraddashAttackState = {
+      active: false,
+      phase: 'moving',
+      originalThraddashPosition: null,
+      daysInCurrentPhase: 0
+    };
+
+    // Состояние атаки Ilwrath
+    let ilwrathAttackState = {
+      active: false,
+      phase: 'moving',
+      originalIlwrathPosition: null,
+      daysInCurrentPhase: 0
+    };
+
+    // Состояние атаки Supox и Utwig
+    let supoxUtwigAttackState = {
+      active: false,
+      phase: 'moving',
+      originalSupoxPosition: null,
+      originalUtwigPosition: null,
+      daysInCurrentPhase: 0
+    };
+
+    // Состояние засады Mycon
+    let myconAmbushState = {
+      active: false,
+      phase: 'moving',
+      originalMyconPosition: null,
+      daysInCurrentPhase: 0
+    };
+
+    // Состояние воссоединения Pkunk
+    let pkunkReunionState = {
+      active: false,
+      phase: 'moving',
+      daysInCurrentPhase: 0
+    };
+
+    // Состояние атаки Альянса
+    let allianceAttackState = {
+      active: false,
+      alliesInAttack: [],
+      daysInCurrentPhase: 0
+    };
+
+    // Состояние марша смерти
+    let deathMarchState = {
+        active: false,
+        warningShown: false,
+        daysUntilDeathMarch: 0,
+        countdownActive: false
+    };
+
+    // Попытка загрузить данные из внешнего файла
+    try {
+      if (window.sphereDataFromFile) {
+        initialSphereData = window.sphereDataFromFile;
+        // Инициализируем игровые сферы копией исходных данных SC2
+        gameSpheres = JSON.parse(JSON.stringify(initialSphereData.newSpheres));
+      }
+    } catch (e) {
+      console.error("Ошибка загрузки данных сфер:", e);
+    }
+
+    // Переменная для хранения текущей даты
+    let currentDate = new Date(2155, 1, 17);
+
+    // Функция для форматирования даты
+    function formatDate(date) {
+      const months = [
+        'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+        'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+      ];
+      const day = date.getDate();
+      const month = months[date.getMonth()];
+      const year = date.getFullYear();
+      return `${day} ${month} ${year} года`;
+    }
+
+    // Функция для обновления отображения даты
+    function updateDateDisplay() {
+      document.getElementById('currentDate').textContent = formatDate(currentDate);
+    }
+
+    // Функция для проверки критических событий
+    function checkCriticalEvents() {
+        const victoryModal = document.getElementById('victoryModal');
+        const defeatModal = document.getElementById('defeatModal');
+        const warningModal = document.getElementById('warningModal');
+
+        // Проверка модальных окон
+        if (victoryModal.style.display === 'block' ||
+            defeatModal.style.display === 'block' ||
+            warningModal.style.display === 'block') {
+            return true;
+        }
+
+        // Проверка уничтожения ключевых сфер
+        const newAllianceSphere = gameSpheres.find(sphere => sphere.name === NEW_ALLIANCE_NAME);
+        if (!newAllianceSphere || newAllianceSphere.size <= 0) {
+            return true;
+        }
+
+        // Проверка активации важных событий
+        if (allianceAttackState.active) {
+            return true;
+        }
+
+        return false;
+    }
+
+    // Обновленный обработчик кнопки множественных ходов
+    document.getElementById('multiTurnButton').addEventListener('click', function() {
+        for (let i = 0; i < MULTI_TURN_COUNT; i++) {
+            nextTurn();
+
+            // Проверяем критические события после каждого хода
+            if (checkCriticalEvents()) {
+                console.log(`Выполнение прервано после ${i + 1} ходов`);
+                break;
+            }
+        }
+    });
+
+    // Обновляем текст кнопки с использованием константы
+    document.getElementById('multiTurnButton').textContent = `${MULTI_TURN_COUNT} ходов`;
+
+    // Функция для проверки условия победы
+    function checkVictoryCondition() {
+        const urQuanSphere = gameSpheres.find(sphere => sphere.name === 'Ur-Quan');
+        const kohrAhSphere = gameSpheres.find(sphere => sphere.name === 'Kohr-Ah');
+
+        // Если обе сферы уничтожены (не найдены в массиве gameSpheres)
+        if (!urQuanSphere && !kohrAhSphere) {
+            showVictoryMessage();
+            return true;
+        }
+        return false;
+    }
+
+    // Функция для показа сообщения о победе
+    function showVictoryMessage() {
+        const victoryModal = document.getElementById('victoryModal');
+        const victoryMessage = document.getElementById('victoryMessage');
+
+        if (victoryModal && victoryMessage) {
+            victoryMessage.textContent = VICTORY_MESSAGE;
+            victoryModal.style.display = 'block';
+
+            // Добавляем вибрацию для усиления эффекта (если поддерживается)
+            if (navigator.vibrate) {
+                navigator.vibrate([200, 100, 200]);
+            }
+        }
+    }
+
+    // Функция для показа предупреждения о победе Kohr-Ah
+    function showWarningMessage() {
+        const warningModal = document.getElementById('warningModal');
+        const warningMessage = document.getElementById('warningMessage');
+
+        if (warningModal && warningMessage) {
+            warningMessage.textContent = KOHRAH_VICTORY_WARNING;
+            warningModal.style.display = 'block';
+
+            // Добавляем вибрацию для усиления эффекта (если поддерживается)
+            if (navigator.vibrate) {
+                navigator.vibrate([300, 100, 300, 100, 300]);
+            }
+        }
+    }
+
+    // Функция для показа сообщения о поражении
+    function showDefeatMessage() {
+        const defeatModal = document.getElementById('defeatModal');
+        const defeatMessage = document.getElementById('defeatMessage');
+
+        if (defeatModal && defeatMessage) {
+            defeatMessage.textContent = DEFEAT_MESSAGE;
+            defeatModal.style.display = 'block';
+
+            // Добавляем вибрацию для усиления эффекта (если поддерживается)
+            if (navigator.vibrate) {
+                navigator.vibrate([500, 200, 500]);
+            }
+        }
+    }
+
+    // Функция для закрытия модального окна победы
+    function closeVictoryModal() {
+        const victoryModal = document.getElementById('victoryModal');
+        if (victoryModal) {
+            victoryModal.style.display = 'none';
+        }
+    }
+
+    // Функция для закрытия модального окна предупреждения
+    function closeWarningModal() {
+        const warningModal = document.getElementById('warningModal');
+        if (warningModal) {
+            warningModal.style.display = 'none';
+        }
+
+        // Останавливаем уменьшение сфер Ur-Quan и Kohr-Ah
+        UR_QUAN_RADIUS_CHANGE = 0;
+        KOHR_AH_RADIUS_CHANGE = 0;
+
+        console.log("Уменьшение сфер Ur-Quan и Kohr-Ah остановлено");
+    }
+
+    // Функция для закрытия модального окна поражения
+    function closeDefeatModal() {
+        const defeatModal = document.getElementById('defeatModal');
+        if (defeatModal) {
+            defeatModal.style.display = 'none';
+        }
+    }
+
+    // Функция для проверки условий марша смерти
+    function checkDeathMarchConditions() {
+        // Если атака альянса активна, не проверяем марш смерти
+        if (allianceAttackState.active) {
+            return;
+        }
+
+        // Проверяем, наступил ли 2159 год
+        if (currentDate.getFullYear() >= 2159 && !deathMarchState.active) {
+            deathMarchState.active = true;
+            console.log("Активирован Марш Смерти - 2159 год");
+        }
+
+        // Если марш смерти активен, проверяем условие Kohr-Ah > Ur-Quan
+        if (deathMarchState.active && !deathMarchState.warningShown) {
+            const kohrAhSphere = gameSpheres.find(sphere => sphere.name === 'Kohr-Ah');
+            const urQuanSphere = gameSpheres.find(sphere => sphere.name === 'Ur-Quan');
+
+            // Если Kohr-Ah больше Ur-Quan, показываем предупреждение
+            if (kohrAhSphere && urQuanSphere && kohrAhSphere.size > urQuanSphere.size) {
+                showWarningMessage();
+                deathMarchState.warningShown = true;
+                deathMarchState.daysUntilDeathMarch = DAYS_UNTIL_DEATH_MARCH_STARTS;
+                deathMarchState.countdownActive = true;
+                console.log("Предупреждение о победе Kohr-Ah показано");
+            }
+        }
+
+        // Если отсчет активен, уменьшаем дни
+        if (deathMarchState.countdownActive) {
+            deathMarchState.daysUntilDeathMarch -= DAYS_PER_TURN;
+            console.log(`До начала марша смерти осталось: ${deathMarchState.daysUntilDeathMarch} дней`);
+
+            // Если время вышло, показываем поражение
+            if (deathMarchState.daysUntilDeathMarch <= 0) {
+                showDefeatMessage();
+                deathMarchState.countdownActive = false;
+            }
+        }
+    }
+
+    // Функция для удаления уничтоженных сфер
+    function removeDestroyedSpheres() {
+        for (let i = gameSpheres.length - 1; i >= 0; i--) {
+            if (gameSpheres[i].size <= 0) {
+                console.log(`Удалена сфера ${gameSpheres[i].name} с радиусом ${gameSpheres[i].size}`);
+                gameSpheres.splice(i, 1);
+            }
+        }
+
+        // Проверяем условие победы после удаления сфер
+        checkVictoryCondition();
+    }
+
+    // Функция для вычисления текущего радиуса New Alliance на основе реальных радиусов союзников
+    function calculateNewAllianceRadius() {
+      let totalArea = 0;
+
+      const earthlingSphere = gameSpheres.find(sphere => sphere.name === 'Earthling');
+      if (earthlingSphere) {
+        totalArea += Math.PI * Math.pow(earthlingSphere.size, 2);
+      }
+
+      if (newAllianceAllies.ZoqFotPik) {
+        const zoqSphere = gameSpheres.find(sphere => sphere.name === 'Zoq-Fot-Pik');
+        if (zoqSphere) {
+          totalArea += Math.PI * Math.pow(zoqSphere.size, 2);
+        }
+      }
+
+      if (newAllianceAllies.Orz) {
+        const orzSphere = gameSpheres.find(sphere => sphere.name === 'Orz');
+        if (orzSphere) {
+          totalArea += Math.PI * Math.pow(orzSphere.size, 2);
+        }
+      }
+
+      if (newAllianceAllies.Spathi) {
+        const spathiSphere = gameSpheres.find(sphere => sphere.name === 'Spathi');
+        if (spathiSphere) {
+          totalArea += Math.PI * Math.pow(spathiSphere.size, 2);
+        }
+      }
+
+      if (newAllianceAllies.Thraddash) {
+        const thraddashSphere = gameSpheres.find(sphere => sphere.name === 'Thraddash');
+        if (thraddashSphere) {
+          totalArea += Math.PI * Math.pow(thraddashSphere.size, 2);
+        }
+      }
+
+      if (newAllianceAllies.Syreen) {
+        const syreenSphere = gameSpheres.find(sphere => sphere.name === 'Syreen');
+        if (syreenSphere) {
+          totalArea += Math.PI * Math.pow(syreenSphere.size, 2);
+        }
+      }
+
+      if (newAllianceAllies.SupoxUtwig) {
+        const supoxSphere = gameSpheres.find(sphere => sphere.name === 'Supox');
+        const utwigSphere = gameSpheres.find(sphere => sphere.name === 'Utwig');
+        if (supoxSphere) {
+          totalArea += Math.PI * Math.pow(supoxSphere.size, 2);
+        }
+        if (utwigSphere) {
+          totalArea += Math.PI * Math.pow(utwigSphere.size, 2);
+        }
+      }
+
+      if (newAllianceAllies.Shofixti) {
+        const shofixtiSphere = gameSpheres.find(sphere => sphere.name === 'Shofixti');
+        if (shofixtiSphere) {
+          totalArea += Math.PI * Math.pow(shofixtiSphere.size, 2);
+        }
+      }
+
+      if (newAllianceAllies.Chmmr) {
+        const chmmrSphere = gameSpheres.find(sphere => sphere.name === 'Chmmr');
+        if (chmmrSphere) {
+          totalArea += Math.PI * Math.pow(chmmrSphere.size, 2);
+        }
+      }
+
+      if (newAllianceAllies.BlackSquadron) {
+        const blackSquadronSphere = gameSpheres.find(sphere => sphere.name === BLACK_SQUADRON_NAME);
+        if (blackSquadronSphere) {
+          totalArea += Math.PI * Math.pow(blackSquadronSphere.size, 2);
+        }
+      }
+
+      if (newAllianceAllies.YehatRebel) {
+        const yehatRebelSphere = gameSpheres.find(sphere => sphere.name === 'Yehat Rebel');
+        if (yehatRebelSphere) {
+          totalArea += Math.PI * Math.pow(yehatRebelSphere.size, 2);
+        }
+      }
+
+      if (newAllianceAllies.Mmrnmhrm) {
+        const mmrnmhrmSphere = gameSpheres.find(sphere => sphere.name === 'Mmrnmhrm');
+        if (mmrnmhrmSphere) {
+          totalArea += Math.PI * Math.pow(mmrnmhrmSphere.size, 2);
+        }
+      }
+
+      if (newAllianceAllies.Unzervalt) {
+        const unzervaltSphere = gameSpheres.find(sphere => sphere.name === UNZERVALT_SPHERE_NAME);
+        if (unzervaltSphere) {
+          totalArea += Math.PI * Math.pow(unzervaltSphere.size, 2);
+        }
+      }
+
+      return Math.sqrt(totalArea / Math.PI);
+    }
+
+    // Функция для обновления сферы New Alliance в данных
+    function updateNewAllianceSphere() {
+      let newAllianceSphere = gameSpheres.find(sphere => sphere.name === NEW_ALLIANCE_NAME);
+
+      if (newAllianceSphere) {
+        newAllianceSphere.size = calculateNewAllianceRadius();
+      }
+    }
+
+    // Функция для первоначальной блокировки чекбоксов
+    function initializeCheckboxes() {
+        // Получаем все чекбоксы в боковой панели
+        const allCheckboxes = document.querySelectorAll('#sidePanel input[type="checkbox"]');
+
+        // Перебираем все чекбоксы и отключаем их, кроме "createNewAlliance"
+        allCheckboxes.forEach(checkbox => {
+            if (checkbox.id !== 'createNewAlliance') {
+                checkbox.disabled = true; // Блокируем чекбокс
+
+                // Меняем стиль текста для визуального обозначения неактивного состояния
+                const label = document.querySelector(`label[for="${checkbox.id}"]`);
+                if (label) {
+                    label.style.color = '#666'; // Серый цвет текста
+                    label.style.fontStyle = 'italic';
+                }
+            }
+        });
+    }
+
+    // Функция для проверки автоматического бегства Spathi
+    function checkAutoSpathiEscape() {
+      if (spathiAllianceDate && newAllianceAllies.Spathi) {
+        const timeDiff = currentDate.getTime() - spathiAllianceDate.getTime();
+        const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
+
+        if (daysDiff >= DAYS_UNTIL_SPATHI_ESCAPE) {
+          // Активируем автоматическое бегство Spathi
+          createSpathiEscape();
+
+          // Разблокируем альянс с Black Squadron
+          const blackSquadronCheckbox = document.getElementById('allianceWithBlackSquadron');
+          const blackSquadronLabel = document.querySelector('label[for="allianceWithBlackSquadron"]');
+          if (blackSquadronCheckbox && blackSquadronLabel) {
+            blackSquadronCheckbox.disabled = false;
+            blackSquadronLabel.style.color = '';
+            blackSquadronLabel.style.fontStyle = '';
+          }
+        }
+      }
+    }
+
+    // Функция для проверки автоматического воссоединения Pkunk
+    function checkAutoPkunkReunion() {
+      if (yehatRebellionDate && !pkunkReunionState.active) {
+        const timeDiff = currentDate.getTime() - yehatRebellionDate.getTime();
+        const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
+
+        if (daysDiff >= DAYS_UNTIL_PKUNK_REUNION) {
+          const pkunkSphere = gameSpheres.find(sphere => sphere.name === 'Pkunk');
+          if (pkunkSphere) {
+            // Активируем автоматическое воссоединение Pkunk
+            startPkunkReunion();
+
+            // Сбрасываем дату, чтобы не запускать повторно
+            yehatRebellionDate = null;
+          } else {
+            // Если сферы Pkunk нет, то сбрасываем дату, потому что воссоединение невозможно
+            yehatRebellionDate = null;
+          }
+        }
+      }
+    }
+
+    // Функция для запуска атаки Альянса
+    function startAllianceAttack() {
+      const kohrAhSphere = gameSpheres.find(sphere => sphere.name === 'Kohr-Ah');
+
+      if (!kohrAhSphere) {
+        console.error("Не найдена сфера Kohr-Ah для атаки Альянса");
+        return;
+      }
+
+      allianceAttackState.active = true;
+      allianceAttackState.daysInCurrentPhase = 0;
+      allianceAttackState.alliesInAttack = [];
+
+      // ОСТАНАВЛИВАЕМ ИЗМЕНЕНИЯ РАДИУСОВ ПРИ АТАКЕ АЛЬЯНСА
+      SHOFIXTI_RADIUS_CHANGE = 0;
+      MMRNMHRM_AREA_CHANGE = 0;
+
+      // Приостанавливаем отсчет марша смерти, если он активен
+      if (deathMarchState.countdownActive) {
+        deathMarchState.countdownActive = false;
+        console.log("Отсчет марша смерти приостановлен из-за атаки альянса");
+      }
+
+      // Собираем всех активных союзников для атаки
+      const allyNames = [
+        'Earthling', 'Zoq-Fot-Pik', 'Orz', 'Spathi', 'Thraddash', 'Syreen',
+        'Supox', 'Utwig', 'Shofixti', 'Chmmr', BLACK_SQUADRON_NAME,
+        'Yehat Rebel', 'Mmrnmhrm', UNZERVALT_SPHERE_NAME
+      ];
+
+      for (const allyName of allyNames) {
+        const allySphere = gameSpheres.find(sphere => sphere.name === allyName);
+        if (allySphere && allySphere.size > 0) {
+          // Проверяем, является ли этот союзник активным в альянсе
+          let isActive = false;
+          switch(allyName) {
+            case 'Earthling': isActive = true; break;
+            case 'Zoq-Fot-Pik': isActive = newAllianceAllies.ZoqFotPik; break;
+            case 'Orz': isActive = newAllianceAllies.Orz; break;
+            case 'Spathi': isActive = newAllianceAllies.Spathi; break;
+            case 'Thraddash': isActive = newAllianceAllies.Thraddash; break;
+            case 'Syreen': isActive = newAllianceAllies.Syreen; break;
+            case 'Supox':
+            case 'Utwig': isActive = newAllianceAllies.SupoxUtwig; break;
+            case 'Shofixti': isActive = newAllianceAllies.Shofixti; break;
+            case 'Chmmr': isActive = newAllianceAllies.Chmmr; break;
+            case BLACK_SQUADRON_NAME: isActive = newAllianceAllies.BlackSquadron; break;
+            case 'Yehat Rebel': isActive = newAllianceAllies.YehatRebel; break;
+            case 'Mmrnmhrm': isActive = newAllianceAllies.Mmrnmhrm; break;
+            case UNZERVALT_SPHERE_NAME: isActive = newAllianceAllies.Unzervalt; break;
+          }
+
+          if (isActive) {
+            allianceAttackState.alliesInAttack.push({
+              name: allyName,
+              originalPosition: { x: allySphere.x, y: allySphere.y },
+              phase: 'moving',
+              sphere: allySphere
+            });
+          }
+        }
+      }
+
+      console.log(`Начало атаки Альянса с ${allianceAttackState.alliesInAttack.length} союзниками`);
+    }
+
+    // Функция для обработки атаки Альянса
+    function processAllianceAttack() {
+      if (!allianceAttackState.active) return;
+
+      const kohrAhSphere = gameSpheres.find(sphere => sphere.name === 'Kohr-Ah');
+      const urQuanSphere = gameSpheres.find(sphere => sphere.name === 'Ur-Quan');
+
+      // Если вражеские сферы уничтожены, завершаем атаку
+      if ((!kohrAhSphere || kohrAhSphere.size <= 0) && (!urQuanSphere || urQuanSphere.size <= 0)) {
+        // Возвращаем всех союзников на базу
+        for (const ally of allianceAttackState.alliesInAttack) {
+          if (ally.phase !== 'returning' && ally.phase !== 'returned') {
+            ally.phase = 'returning';
+          }
+        }
+      }
+
+      let activeAllies = 0;
+
+      for (const ally of allianceAttackState.alliesInAttack) {
+        if (ally.phase === 'destroyed') continue;
+
+        const allySphere = ally.sphere;
+
+        // Если союзник уничтожен, пропускаем
+        if (allySphere.size <= 0) {
+          ally.phase = 'destroyed';
+          continue;
+        }
+
+        if (ally.phase === 'moving') {
+          // Движение к Kohr-Ah
+          if (!kohrAhSphere || kohrAhSphere.size <= 0) {
+            ally.phase = 'returning';
+            continue;
+          }
+
+          const dx = kohrAhSphere.x - allySphere.x;
+          const dy = kohrAhSphere.y - allySphere.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance <= ALLIANCE_ATTACK_DISTANCE) {
+            ally.phase = 'fighting';
+          } else {
+            const moveDistance = SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN;
+            const ratio = moveDistance / distance;
+            allySphere.x += dx * ratio;
+            allySphere.y += dy * ratio;
+          }
+        }
+        else if (ally.phase === 'fighting') {
+          // Проверяем, не стал ли радиус союзника слишком маленьким
+          if (allySphere.size < MIN_ALLY_RADIUS) {
+            allySphere.size = MIN_ALLY_RADIUS; // Добавить эту строку
+            ally.phase = 'returning';
+            continue;
+          }
+
+          // Бой с Иерархией
+          const allyArea = Math.PI * Math.pow(allySphere.size, 2);
+          const damageArea = SPHERE_DAMAGE_SPEED * DAYS_PER_TURN;
+
+          // Союзник получает урон
+          const newAllyArea = Math.max(0, allyArea - damageArea);
+          allySphere.size = Math.sqrt(newAllyArea / Math.PI);
+
+          // Враги получают урон (половинный урон, умноженный на коэффициент)
+          const enemyDamageArea = (damageArea / 2) * HIERARCHY_DAMAGE_FACTOR;
+
+          if (urQuanSphere && urQuanSphere.size > 0) {
+            const urQuanArea = Math.PI * Math.pow(urQuanSphere.size, 2);
+            const newUrQuanArea = Math.max(0, urQuanArea - enemyDamageArea);
+            urQuanSphere.size = Math.sqrt(newUrQuanArea / Math.PI);
+
+            // Удаляем Ur-Quan, если радиус стал 0
+            if (urQuanSphere.size <= 0) {
+              const index = gameSpheres.findIndex(sphere => sphere.name === 'Ur-Quan');
+              if (index !== -1) {
+                console.log("Уничтожена сфера Ur-Quan");
+                gameSpheres.splice(index, 1);
+              }
+            }
+          }
+
+          if (kohrAhSphere && kohrAhSphere.size > 0) {
+            const kohrAhArea = Math.PI * Math.pow(kohrAhSphere.size, 2);
+            const newKohrAhArea = Math.max(0, kohrAhArea - enemyDamageArea);
+            kohrAhSphere.size = Math.sqrt(newKohrAhArea / Math.PI);
+
+            // Удаляем Kohr-Ah, если радиус стал 0
+            if (kohrAhSphere.size <= 0) {
+              const index = gameSpheres.findIndex(sphere => sphere.name === 'Kohr-Ah');
+              if (index !== -1) {
+                console.log("Уничтожена сфера Kohr-Ah");
+                gameSpheres.splice(index, 1);
+              }
+            }
+          }
+
+          // Проверяем, не стал ли радиус союзника слишком маленьким после боя
+          if (allySphere.size < MIN_ALLY_RADIUS) {
+            allySphere.size = MIN_ALLY_RADIUS; // Добавить эту строку
+            ally.phase = 'returning';
+          }
+        }
+        else if (ally.phase === 'returning') {
+          // Возвращение на исходную позицию
+          const dx = ally.originalPosition.x - allySphere.x;
+          const dy = ally.originalPosition.y - allySphere.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance <= SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN) {
+            allySphere.x = ally.originalPosition.x;
+            allySphere.y = ally.originalPosition.y;
+            ally.phase = 'returned';
+          } else {
+            const moveDistance = SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN;
+            const ratio = moveDistance / distance;
+            allySphere.x += dx * ratio;
+            allySphere.y += dy * ratio;
+          }
+        }
+
+        if (ally.phase !== 'returned' && ally.phase !== 'destroyed') {
+          activeAllies++;
+        }
+      }
+
+      // Если не осталось активных союзников или все враги уничтожены, завершаем атаку
+      if (activeAllies === 0 ||
+          ((!kohrAhSphere || kohrAhSphere.size <= 0) &&
+           (!urQuanSphere || urQuanSphere.size <= 0))) {
+
+        // Проверяем, все ли союзники вернулись или уничтожены
+        let allReturnedOrDestroyed = true;
+        for (const ally of allianceAttackState.alliesInAttack) {
+          if (ally.phase !== 'returned' && ally.phase !== 'destroyed') {
+            allReturnedOrDestroyed = false;
+            break;
+          }
+        }
+
+        if (allReturnedOrDestroyed) {
+          allianceAttackState.active = false;
+          console.log("Атака Альянса завершена");
+
+          // Проверяем, остались ли враги после атаки
+          const remainingKohrAh = gameSpheres.find(sphere => sphere.name === 'Kohr-Ah');
+          const remainingUrQuan = gameSpheres.find(sphere => sphere.name === 'Ur-Quan');
+
+          // Если враги остались и марш смерти был активен, возобновляем отсчет
+          if ((remainingKohrAh || remainingUrQuan) && deathMarchState.warningShown) {
+            deathMarchState.countdownActive = true;
+            console.log("Враги остались, возобновляем отсчет марша смерти");
+          }
+        }
+      }
+
+      allianceAttackState.daysInCurrentPhase += DAYS_PER_TURN;
+    }
+
+    // Функция для обработки следующего хода
+    function nextTurn() {
+      currentDate.setDate(currentDate.getDate() + DAYS_PER_TURN);
+      updateDateDisplay();
+
+      // Проверяем автоматическое бегство Spathi
+      checkAutoSpathiEscape();
+
+      // Проверяем автоматическое воссоединение Pkunk
+      checkAutoPkunkReunion();
+
+      modifySphereRadius('Ur-Quan', UR_QUAN_RADIUS_CHANGE * DAYS_PER_TURN);
+      modifySphereRadius('Kohr-Ah', KOHR_AH_RADIUS_CHANGE * DAYS_PER_TURN);
+      modifySphereRadius('Shofixti', SHOFIXTI_RADIUS_CHANGE * DAYS_PER_TURN);
+
+      const mmrnmhrmSphere = gameSpheres.find(sphere => sphere.name === 'Mmrnmhrm');
+      if (mmrnmhrmSphere) {
+          const currentArea = Math.PI * Math.pow(mmrnmhrmSphere.size, 2);
+          const newArea = currentArea + (MMRNMHRM_AREA_CHANGE * DAYS_PER_TURN);
+          mmrnmhrmSphere.size = Math.sqrt(newArea / Math.PI);
+      }
+
+const createNewAlliance = document.getElementById('createNewAlliance').checked;
+if (createNewAlliance) {
+    createEarthlingAndNewAllianceSpheres();
+    const checkbox = document.getElementById('createNewAlliance');
+    checkbox.checked = false;
+    checkbox.disabled = true;
+    document.querySelector('label[for="createNewAlliance"]').classList.add('completed');
+
+    const checkboxesToUnlock = [
+        'allianceWithZoqFotPik', 'allianceWithOrz', 'allianceWithSpathi',
+        'allianceWithThraddash', 'syreenFleetReturn', 'shofixtiRevival', 'ilwrathAttack'
+    ];
+
+    checkboxesToUnlock.forEach(checkboxId => {
+        const cb = document.getElementById(checkboxId);
+        const label = document.querySelector(`label[for="${checkboxId}"]`);
+        if (cb && label) {
+            cb.disabled = false;
+            label.style.color = '';
+            label.style.fontStyle = '';
+        }
+    });
+
+    // Разблокировать чекбокс "Атака Альянса"
+    const allianceAttackCheckbox = document.getElementById('allianceAttack');
+    const allianceAttackLabel = document.querySelector('label[for="allianceAttack"]');
+    if (allianceAttackCheckbox && allianceAttackLabel) {
+        allianceAttackCheckbox.disabled = false;
+        allianceAttackLabel.style.color = '';
+        allianceAttackLabel.style.fontStyle = '';
+    }
+}
+
+      const allianceWithZoqFotPik = document.getElementById('allianceWithZoqFotPik').checked;
+      if (allianceWithZoqFotPik) {
+        createZoqFotPikAlliance();
+        const checkbox = document.getElementById('allianceWithZoqFotPik');
+        checkbox.checked = false;
+        checkbox.disabled = true;
+        document.querySelector('label[for="allianceWithZoqFotPik"]').classList.add('completed');
+      }
+
+      const allianceWithOrz = document.getElementById('allianceWithOrz').checked;
+      if (allianceWithOrz) {
+        createOrzAlliance();
+        const checkbox = document.getElementById('allianceWithOrz');
+        checkbox.checked = false;
+        checkbox.disabled = true;
+        document.querySelector('label[for="allianceWithOrz"]').classList.add('completed');
+      }
+
+      const allianceWithSpathi = document.getElementById('allianceWithSpathi').checked;
+      if (allianceWithSpathi) {
+        createSpathiAlliance();
+        const checkbox = document.getElementById('allianceWithSpathi');
+        checkbox.checked = false;
+        checkbox.disabled = true;
+        document.querySelector('label[for="allianceWithSpathi"]').classList.add('completed');
+      }
+
+      const allianceWithBlackSquadron = document.getElementById('allianceWithBlackSquadron').checked;
+      if (allianceWithBlackSquadron) {
+        createBlackSquadronAlliance();
+        const checkbox = document.getElementById('allianceWithBlackSquadron');
+        checkbox.checked = false;
+        checkbox.disabled = true;
+        document.querySelector('label[for="allianceWithBlackSquadron"]').classList.add('completed');
+
+        const motherArkCheckbox = document.getElementById('motherArkRepair');
+        const motherArkLabel = document.querySelector('label[for="motherArkRepair"]');
+        if (motherArkCheckbox && motherArkLabel) {
+            motherArkCheckbox.disabled = false;
+            motherArkLabel.style.color = '';
+            motherArkLabel.style.fontStyle = '';
+        }
+      }
+
+      const motherArkRepair = document.getElementById('motherArkRepair').checked;
+      if (motherArkRepair) {
+        createMotherArkRepair();
+        const checkbox = document.getElementById('motherArkRepair');
+        checkbox.checked = false;
+        checkbox.disabled = true;
+        document.querySelector('label[for="motherArkRepair"]').classList.add('completed');
+      }
+
+      const allianceWithThraddash = document.getElementById('allianceWithThraddash').checked;
+      if (allianceWithThraddash) {
+        createThraddashAlliance();
+        const checkbox = document.getElementById('allianceWithThraddash');
+        checkbox.checked = false;
+        checkbox.disabled = true;
+        document.querySelector('label[for="allianceWithThraddash"]').classList.add('completed');
+
+        const thraddashAttackCheckbox = document.getElementById('thraddashAttack');
+        const thraddashAttackLabel = document.querySelector('label[for="thraddashAttack"]');
+        if (thraddashAttackCheckbox && thraddashAttackLabel) {
+            thraddashAttackCheckbox.disabled = false;
+            thraddashAttackLabel.style.color = '';
+            thraddashAttackLabel.style.fontStyle = '';
+        }
+
+        const supoxUtwigAllianceCheckbox = document.getElementById('allianceWithSupoxUtwig');
+        const supoxUtwigAllianceLabel = document.querySelector('label[for="allianceWithSupoxUtwig"]');
+        if (supoxUtwigAllianceCheckbox && supoxUtwigAllianceLabel) {
+            supoxUtwigAllianceCheckbox.disabled = false;
+            supoxUtwigAllianceLabel.style.color = '';
+            supoxUtwigAllianceLabel.style.fontStyle = '';
+        }
+      }
+
+      const syreenFleetReturn = document.getElementById('syreenFleetReturn').checked;
+      if (syreenFleetReturn) {
+          createSyreenFleetReturn();
+          const checkbox = document.getElementById('syreenFleetReturn');
+          checkbox.checked = false;
+          checkbox.disabled = true;
+          document.querySelector('label[for="syreenFleetReturn"]').classList.add('completed');
+
+          const myconAmbushCheckbox = document.getElementById('myconAmbush');
+          const myconAmbushLabel = document.querySelector('label[for="myconAmbush"]');
+          if (myconAmbushCheckbox && myconAmbushLabel) {
+              myconAmbushCheckbox.disabled = false; // Разблокировать чекбокс
+              myconAmbushLabel.style.color = ''; // Вернуть стандартный цвет текста
+              myconAmbushLabel.style.fontStyle = ''; // Убрать курсив
+          }
+      }
+
+      const earthlingShieldRemoval = document.getElementById('earthlingShieldRemoval').checked;
+      if (earthlingShieldRemoval) {
+          const earthlingSphere = gameSpheres.find(sphere => sphere.name === 'Earthling');
+          if (earthlingSphere) {
+              earthlingSphere.size += EARTHLING_SHIELD_REMOVAL_RADIUS_INCREASE;
+          }
+
+          const checkbox = document.getElementById('earthlingShieldRemoval');
+          checkbox.checked = false;
+          checkbox.disabled = true;
+          document.querySelector('label[for="earthlingShieldRemoval"]').classList.add('completed');
+      }
+
+      const unzervaltShieldRemoval = document.getElementById('unzervaltShieldRemoval').checked;
+      if (unzervaltShieldRemoval) {
+          createUnzervaltShieldRemoval();
+          const checkbox = document.getElementById('unzervaltShieldRemoval');
+          checkbox.checked = false;
+          checkbox.disabled = true;
+          document.querySelector('label[for="unzervaltShieldRemoval"]').classList.add('completed');
+      }
+
+      const syreenShieldRemoval = document.getElementById('syreenShieldRemoval').checked;
+      if (syreenShieldRemoval) {
+          const syreenSphere = gameSpheres.find(sphere => sphere.name === 'Syreen');
+          if (syreenSphere) {
+              syreenSphere.size += SYREEN_SHIELD_REMOVAL_RADIUS_INCREASE;
+          }
+
+          const checkbox = document.getElementById('syreenShieldRemoval');
+          checkbox.checked = false;
+          checkbox.disabled = true;
+          document.querySelector('label[for="syreenShieldRemoval"]').classList.add('completed');
+      }
+
+      const spathiShieldRemoval = document.getElementById('spathiShieldRemoval').checked;
+      if (spathiShieldRemoval) {
+          createSpathiShieldRemoval();
+          const checkbox = document.getElementById('spathiShieldRemoval');
+          checkbox.checked = false;
+          checkbox.disabled = true;
+          document.querySelector('label[for="spathiShieldRemoval"]').classList.add('completed');
+      }
+
+      const allianceWithSupoxUtwig = document.getElementById('allianceWithSupoxUtwig').checked;
+      if (allianceWithSupoxUtwig) {
+        createSupoxUtwigAlliance();
+        const checkbox = document.getElementById('allianceWithSupoxUtwig');
+        checkbox.checked = false;
+        checkbox.disabled = true;
+        document.querySelector('label[for="allianceWithSupoxUtwig"]').classList.add('completed');
+
+        const supoxUtwigAttackCheckbox = document.getElementById('supoxUtwigAttack');
+        const supoxUtwigAttackLabel = document.querySelector('label[for="supoxUtwigAttack"]');
+        if (supoxUtwigAttackCheckbox && supoxUtwigAttackLabel) {
+            supoxUtwigAttackCheckbox.disabled = false;
+            supoxUtwigAttackLabel.style.color = '';
+            supoxUtwigAttackLabel.style.fontStyle = '';
+        }
+      }
+
+      const shofixtiRevival = document.getElementById('shofixtiRevival').checked;
+      if (shofixtiRevival) {
+        createShofixtiRevival();
+        const checkbox = document.getElementById('shofixtiRevival');
+        checkbox.checked = false;
+        checkbox.disabled = true;
+        document.querySelector('label[for="shofixtiRevival"]').classList.add('completed');
+
+        const yehatRebellionCheckbox = document.getElementById('yehatRebellion');
+        const yehatRebellionLabel = document.querySelector('label[for="yehatRebellion"]');
+        if (yehatRebellionCheckbox && yehatRebellionLabel) {
+            yehatRebellionCheckbox.disabled = false;
+            yehatRebellionLabel.style.color = '';
+            yehatRebellionLabel.style.fontStyle = '';
+        }
+      }
+
+      const yehatRebellion = document.getElementById('yehatRebellion').checked;
+      if (yehatRebellion) {
+        createYehatRebellion();
+        const checkbox = document.getElementById('yehatRebellion');
+        checkbox.checked = false;
+        checkbox.disabled = true;
+        document.querySelector('label[for="yehatRebellion"]').classList.add('completed');
+
+        // Запоминаем дату начала революции Yehat для автоматического воссоединения Pkunk
+        yehatRebellionDate = new Date(currentDate);
+      }
+
+      const allianceWithChmmr = document.getElementById('allianceWithChmmr').checked;
+      if (allianceWithChmmr) {
+        createChmmrAlliance();
+        const checkbox = document.getElementById('allianceWithChmmr');
+        checkbox.checked = false;
+        checkbox.disabled = true;
+        document.querySelector('label[for="allianceWithChmmr"]').classList.add('completed');
+
+        const shieldsToUnlock = [
+            'earthlingShieldRemoval',
+            'unzervaltShieldRemoval',
+            'syreenShieldRemoval',
+            'spathiShieldRemoval'
+        ];
+
+        shieldsToUnlock.forEach(shieldId => {
+            const shieldCheckbox = document.getElementById(shieldId);
+            const shieldLabel = document.querySelector(`label[for="${shieldId}"]`);
+            if (shieldCheckbox && shieldLabel) {
+                shieldCheckbox.disabled = false;
+                shieldLabel.style.color = '';
+                shieldLabel.style.fontStyle = '';
+            }
+        });
+      }
+
+      const thraddashAttack = document.getElementById('thraddashAttack').checked;
+      if (thraddashAttack && !thraddashAttackState.active) {
+        startThraddashAttack();
+        const checkbox = document.getElementById('thraddashAttack');
+        checkbox.checked = false;
+        checkbox.disabled = true;
+        document.querySelector('label[for="thraddashAttack"]').classList.add('completed');
+      }
+
+      const ilwrathAttack = document.getElementById('ilwrathAttack').checked;
+      if (ilwrathAttack && !ilwrathAttackState.active) {
+        startIlwrathAttack();
+        const checkbox = document.getElementById('ilwrathAttack');
+        checkbox.checked = false;
+        checkbox.disabled = true;
+        document.querySelector('label[for="ilwrathAttack"]').classList.add('completed');
+      }
+
+      const supoxUtwigAttack = document.getElementById('supoxUtwigAttack').checked;
+      if (supoxUtwigAttack && !supoxUtwigAttackState.active) {
+        startSupoxUtwigAttack();
+        const checkbox = document.getElementById('supoxUtwigAttack');
+        checkbox.checked = false;
+        checkbox.disabled = true;
+        document.querySelector('label[for="supoxUtwigAttack"]').classList.add('completed');
+      }
+
+      const myconAmbush = document.getElementById('myconAmbush').checked;
+      if (myconAmbush && !myconAmbushState.active) {
+        startMyconAmbush();
+        const checkbox = document.getElementById('myconAmbush');
+        checkbox.checked = false;
+        checkbox.disabled = true;
+        document.querySelector('label[for="myconAmbush"]').classList.add('completed');
+
+        const chmmrAllianceCheckbox = document.getElementById('allianceWithChmmr');
+        const chmmrAllianceLabel = document.querySelector('label[for="allianceWithChmmr"]');
+        if (chmmrAllianceCheckbox && chmmrAllianceLabel) {
+            chmmrAllianceCheckbox.disabled = false;
+            chmmrAllianceLabel.style.color = '';
+            chmmrAllianceLabel.style.fontStyle = '';
+        }
+      }
+
+      const allianceAttack = document.getElementById('allianceAttack').checked;
+      if (allianceAttack && !allianceAttackState.active) {
+        startAllianceAttack();
+        const checkbox = document.getElementById('allianceAttack');
+        checkbox.checked = false;
+        checkbox.disabled = true;
+        document.querySelector('label[for="allianceAttack"]').classList.add('completed');
+      }
+
+      // Проверяем условия марша смерти
+      checkDeathMarchConditions();
+
+      if (thraddashAttackState.active) {
+        processThraddashAttack();
+      }
+
+      if (ilwrathAttackState.active) {
+        processIlwrathAttack();
+      }
+
+      if (supoxUtwigAttackState.active) {
+        processSupoxUtwigAttack();
+      }
+
+      if (myconAmbushState.active) {
+        processMyconAmbush();
+      }
+
+      if (pkunkReunionState.active) {
+        processPkunkReunion();
+      }
+
+      if (allianceAttackState.active) {
+        processAllianceAttack();
+      }
+
+      // Удаляем уничтоженные сферы
+      removeDestroyedSpheres();
+
+      updateNewAllianceSphere();
+      renderAll(currentHighlight);
+    }
+
+    // Функция для изменения радиуса сферы
+    function modifySphereRadius(sphereName, radiusChange) {
+      for (const sphere of gameSpheres) {
+        if (sphere.name === sphereName) {
+          sphere.size += radiusChange;
+          if (sphere.size < 0) sphere.size = 0;
+
+          // Немедленно удаляем сферу, если радиус стал 0
+          if (sphere.size === 0) {
+            const index = gameSpheres.indexOf(sphere);
+            if (index !== -1) {
+              console.log(`Удалена сфера ${sphereName} с нулевым радиусом`);
+              gameSpheres.splice(index, 1);
+            }
+          }
+        }
+      }
+    }
+
+    // Функция для создания Spathi Slave Shield - ИСПРАВЛЕННАЯ ВЕРСИЯ
+    function createSpathiShieldRemoval() {
+        // Удаляем существующую сферу Spathi, если она есть
+        const existingSpathiIndex = gameSpheres.findIndex(sphere => sphere.name === 'Spathi');
+        if (existingSpathiIndex !== -1) {
+            gameSpheres.splice(existingSpathiIndex, 1);
+        }
+
+        // Находим исходные данные Spathi из новых сфер
+        const spathiFromNewSpheres = initialSphereData.newSpheres.find(sphere => sphere.name === 'Spathi');
+
+        if (spathiFromNewSpheres) {
+            // Создаем новую сферу с теми же данными, но с радиусом SPATHI_SLAVE_SHIELD_RADIUS
+            const spathiShieldSphere = {
+                name: 'Spathi',
+                x: spathiFromNewSpheres.x,
+                y: spathiFromNewSpheres.y,
+                size: SPATHI_SLAVE_SHIELD_RADIUS,
+                color: spathiFromNewSpheres.color
+            };
+
+            // Добавляем сферу в игровые сферы
+            gameSpheres.push(spathiShieldSphere);
+
+            // Добавляем Spathi в союзники New Alliance
+            newAllianceAllies.Spathi = true;
+
+            // Сбрасываем дату альянса, чтобы предотвратить автоматическое бегство
+            spathiAllianceDate = null;
+
+            // Обновляем сферу New Alliance
+            updateNewAllianceSphere();
+        }
+    }
+
+    // Функция для создания Unzervalt Slave Shield
+    function createUnzervaltShieldRemoval() {
+        // Получаем цвет Umgah из старых сфер влияния
+        const umgahFromSC1 = initialSphereData.oldSpheres.find(sphere => sphere.name === 'Umgah');
+        const umgahColor = umgahFromSC1 ? umgahFromSC1.color : '#8A2BE2'; // Фиолетовый как запасной вариант
+
+        // Создаем сферу Unzervalt
+        const unzervaltSphere = {
+            name: UNZERVALT_SPHERE_NAME,
+            x: UNZERVALT_CENTER_POSITION[0],
+            y: UNZERVALT_CENTER_POSITION[1],
+            size: UNZERVALT_SLAVE_SHIELD_RADIUS,
+            color: umgahColor
+        };
+
+        // Добавляем сферу в игровые сферы
+        gameSpheres.push(unzervaltSphere);
+
+        // Добавляем Unzervalt в союзники New Alliance
+        newAllianceAllies.Unzervalt = true;
+
+        // Обновляем сферу New Alliance
+        updateNewAllianceSphere();
+    }
+
+    // Функция для создания революции Yehat
+    function createYehatRebellion() {
+      const existingYehatSphere = gameSpheres.find(sphere => sphere.name === 'Yehat');
+      if (existingYehatSphere) {
+        existingYehatSphere.size = YEHAY_REBEL_RADIUS;
+      }
+
+      const yehatFromSC1 = initialSphereData.oldSpheres.find(sphere => sphere.name === 'Yehat');
+
+      if (yehatFromSC1) {
+        const newYehatRebelSphere = {
+          name: 'Yehat Rebel',
+          x: yehatFromSC1.x + 10,
+          y: yehatFromSC1.y,
+          size: YEHAY_REBEL_RADIUS,
+          color: yehatFromSC1.color
+        };
+
+        gameSpheres.push(newYehatRebelSphere);
+      }
+    }
+
+    // Функция для запуска воссоединения Pkunk
+    function startPkunkReunion() {
+      const pkunkSphere = gameSpheres.find(sphere => sphere.name === 'Pkunk');
+      const yehatSphere = gameSpheres.find(sphere => sphere.name === 'Yehat');
+
+      if (!pkunkSphere || !yehatSphere) {
+        console.error("Не найдены сферы Pkunk или Yehat для воссоединения");
+        return;
+      }
+
+      pkunkReunionState.active = true;
+      pkunkReunionState.phase = 'moving';
+      pkunkReunionState.daysInCurrentPhase = 0;
+    }
+
+    // Функция для обработки воссоединения Pkunk
+    function processPkunkReunion() {
+      const pkunkIndex = gameSpheres.findIndex(sphere => sphere.name === 'Pkunk');
+      const yehatIndex = gameSpheres.findIndex(sphere => sphere.name === 'Yehat');
+      const yehatRebelIndex = gameSpheres.findIndex(sphere => sphere.name === 'Yehat Rebel');
+
+      if (pkunkIndex === -1 || yehatIndex === -1 || yehatRebelIndex === -1) {
+        pkunkReunionState.active = false;
+        return;
+      }
+
+      const pkunkSphere = gameSpheres[pkunkIndex];
+      const yehatSphere = gameSpheres[yehatIndex];
+      const yehatRebelSphere = gameSpheres[yehatRebelIndex];
+
+      pkunkReunionState.daysInCurrentPhase += DAYS_PER_TURN;
+
+      if (pkunkReunionState.phase === 'moving') {
+        const dx = yehatSphere.x - pkunkSphere.x;
+        const dy = yehatSphere.y - pkunkSphere.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance <= SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN) {
+          pkunkSphere.x = yehatSphere.x;
+          pkunkSphere.y = yehatSphere.y;
+          pkunkReunionState.phase = 'completed';
+          pkunkReunionState.daysInCurrentPhase = 0;
+        } else {
+          const moveDistance = SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN;
+          const ratio = moveDistance / distance;
+          pkunkSphere.x += dx * ratio;
+          pkunkSphere.y += dy * ratio;
+        }
+      } else if (pkunkReunionState.phase === 'completed') {
+        gameSpheres.splice(pkunkIndex, 1);
+
+        const newYehatIndex = gameSpheres.findIndex(sphere => sphere.name === 'Yehat');
+        if (newYehatIndex !== -1) {
+          gameSpheres.splice(newYehatIndex, 1);
+        }
+
+        yehatRebelSphere.size = YEHAY_REBEL_AFTER_REUNION_RADIUS;
+        newAllianceAllies.YehatRebel = true;
+        updateNewAllianceSphere();
+        pkunkReunionState.active = false;
+      }
+    }
+
+// Функция для создания бегства Spathi
+function createSpathiEscape() {
+  newAllianceAllies.Spathi = false;
+
+  const spathiIndex = gameSpheres.findIndex(sphere => sphere.name === 'Spathi');
+  if (spathiIndex !== -1) {
+    gameSpheres.splice(spathiIndex, 1);
+  }
+
+  // Разблокируем альянс с Black Squadron
+  const blackSquadronCheckbox = document.getElementById('allianceWithBlackSquadron');
+  const blackSquadronLabel = document.querySelector('label[for="allianceWithBlackSquadron"]');
+  if (blackSquadronCheckbox && blackSquadronLabel) {
+    blackSquadronCheckbox.disabled = false;
+    blackSquadronLabel.style.color = '';
+    blackSquadronLabel.style.fontStyle = '';
+  }
+}
+
+    // Функция для создания альянса с Spathi
+    function createSpathiAlliance() {
+      newAllianceAllies.Spathi = true;
+
+      // Запоминаем дату заключения альянса с Spathi
+      spathiAllianceDate = new Date(currentDate);
+
+      updateNewAllianceSphere();
+    }
+
+    // Функция для запуска атаки Thraddash
+    function startThraddashAttack() {
+      const thraddashSphere = gameSpheres.find(sphere => sphere.name === 'Thraddash');
+      const kohrAhSphere = gameSpheres.find(sphere => sphere.name === 'Kohr-Ah');
+
+      if (!thraddashSphere || !kohrAhSphere) {
+        console.error("Не найдены сферы Thraddash или Kohr-Ah для атаки");
+        return;
+      }
+
+      thraddashAttackState.active = true;
+      thraddashAttackState.phase = 'moving';
+      thraddashAttackState.originalThraddashPosition = {
+        x: thraddashSphere.x,
+        y: thraddashSphere.y
+      };
+      thraddashAttackState.daysInCurrentPhase = 0;
+    }
+
+    // Функция для обработки атаки Thraddash
+    function processThraddashAttack() {
+      const thraddashIndex = gameSpheres.findIndex(sphere => sphere.name === 'Thraddash');
+      const kohrAhIndex = gameSpheres.findIndex(sphere => sphere.name === 'Kohr-Ah');
+
+      if (thraddashIndex === -1 || kohrAhIndex === -1) {
+        thraddashAttackState.active = false;
+        return;
+      }
+
+      const thraddashSphere = gameSpheres[thraddashIndex];
+      const kohrAhSphere = gameSpheres[kohrAhIndex];
+
+      if (thraddashSphere.size <= 0) {
+        const index = gameSpheres.findIndex(sphere => sphere.name === 'Thraddash');
+        if (index !== -1) gameSpheres.splice(index, 1);
+        thraddashAttackState.active = false;
+        newAllianceAllies.Thraddash = false;
+        return;
+      }
+
+      if (kohrAhSphere.size <= 0) {
+        const index = gameSpheres.findIndex(sphere => sphere.name === 'Kohr-Ah');
+        if (index !== -1) gameSpheres.splice(index, 1);
+        thraddashAttackState.active = false;
+        return;
+      }
+
+      thraddashAttackState.daysInCurrentPhase += DAYS_PER_TURN;
+
+      if (thraddashAttackState.phase === 'moving') {
+        const dx = kohrAhSphere.x - thraddashSphere.x;
+        const dy = kohrAhSphere.y - thraddashSphere.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance <= THRADDASH_ATTACK_DISTANCE) {
+          thraddashAttackState.phase = 'fighting';
+          thraddashAttackState.daysInCurrentPhase = 0;
+        } else {
+          const moveDistance = SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN;
+          const ratio = moveDistance / distance;
+          thraddashSphere.x += dx * ratio;
+          thraddashSphere.y += dy * ratio;
+        }
+      } else if (thraddashAttackState.phase === 'fighting') {
+        const thraddashArea = Math.PI * Math.pow(thraddashSphere.size, 2);
+        const kohrAhArea = Math.PI * Math.pow(kohrAhSphere.size, 2);
+
+        const damageArea = SPHERE_DAMAGE_SPEED * DAYS_PER_TURN;
+
+        const newThraddashArea = Math.max(0, thraddashArea - damageArea);
+        const newKohrAhArea = Math.max(0, kohrAhArea - damageArea);
+
+        thraddashSphere.size = Math.sqrt(newThraddashArea / Math.PI);
+        kohrAhSphere.size = Math.sqrt(newKohrAhArea / Math.PI);
+
+        if (thraddashSphere.size <= 0) {
+          const index = gameSpheres.findIndex(sphere => sphere.name === 'Thraddash');
+          if (index !== -1) gameSpheres.splice(index, 1);
+          thraddashAttackState.active = false;
+          newAllianceAllies.Thraddash = false;
+          return;
+        }
+
+        if (kohrAhSphere.size <= 0) {
+          const index = gameSpheres.findIndex(sphere => sphere.name === 'Kohr-Ah');
+          if (index !== -1) gameSpheres.splice(index, 1);
+          thraddashAttackState.active = false;
+          return;
+        }
+
+        if (thraddashSphere.size <= THRADDASH_ATTACK_DAMAGE) {
+          thraddashAttackState.phase = 'returning';
+          thraddashAttackState.daysInCurrentPhase = 0;
+        }
+      } else if (thraddashAttackState.phase === 'returning') {
+        const dx = thraddashAttackState.originalThraddashPosition.x - thraddashSphere.x;
+        const dy = thraddashAttackState.originalThraddashPosition.y - thraddashSphere.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance <= SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN) {
+          thraddashSphere.x = thraddashAttackState.originalThraddashPosition.x;
+          thraddashSphere.y = thraddashAttackState.originalThraddashPosition.y;
+          thraddashAttackState.active = false;
+        } else {
+          const moveDistance = SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN;
+          const ratio = moveDistance / distance;
+          thraddashSphere.x += dx * ratio;
+          thraddashSphere.y += dy * ratio;
+        }
+      }
+    }
+
+    // Функция для запуска атаки Ilwrath
+    function startIlwrathAttack() {
+      const ilwrathSphere = gameSpheres.find(sphere => sphere.name === 'Ilwrath');
+      const kohrAhSphere = gameSpheres.find(sphere => sphere.name === 'Kohr-Ah');
+
+      if (!ilwrathSphere || !kohrAhSphere) {
+        console.error("Не найдены сферы Ilwrath или Kohr-Ah для атаки");
+        return;
+      }
+
+      ilwrathAttackState.active = true;
+      ilwrathAttackState.phase = 'moving';
+      ilwrathAttackState.originalIlwrathPosition = {
+        x: ilwrathSphere.x,
+        y: ilwrathSphere.y
+      };
+      ilwrathAttackState.daysInCurrentPhase = 0;
+    }
+
+    // Функция для обработки атаки Ilwrath
+    function processIlwrathAttack() {
+      const ilwrathIndex = gameSpheres.findIndex(sphere => sphere.name === 'Ilwrath');
+      const kohrAhIndex = gameSpheres.findIndex(sphere => sphere.name === 'Kohr-Ah');
+      const urQuanIndex = gameSpheres.findIndex(sphere => sphere.name === 'Ur-Quan');
+
+      if (ilwrathIndex === -1 || kohrAhIndex === -1) {
+        ilwrathAttackState.active = false;
+        return;
+      }
+
+      const ilwrathSphere = gameSpheres[ilwrathIndex];
+      const kohrAhSphere = gameSpheres[kohrAhIndex];
+      const urQuanSphere = urQuanIndex !== -1 ? gameSpheres[urQuanIndex] : null;
+
+      if (ilwrathSphere.size <= 0) {
+        const index = gameSpheres.findIndex(sphere => sphere.name === 'Ilwrath');
+        if (index !== -1) gameSpheres.splice(index, 1);
+        ilwrathAttackState.active = false;
+        return;
+      }
+
+      if (kohrAhSphere.size <= 0) {
+        const index = gameSpheres.findIndex(sphere => sphere.name === 'Kohr-Ah');
+        if (index !== -1) gameSpheres.splice(index, 1);
+        ilwrathAttackState.active = false;
+        return;
+      }
+
+      ilwrathAttackState.daysInCurrentPhase += DAYS_PER_TURN;
+
+      if (ilwrathAttackState.phase === 'moving') {
+        const dx = kohrAhSphere.x - ilwrathSphere.x;
+        const dy = kohrAhSphere.y - ilwrathSphere.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance <= ILWRATH_ATTACK_DISTANCE) {
+          ilwrathAttackState.phase = 'fighting';
+          ilwrathAttackState.daysInCurrentPhase = 0;
+        } else {
+          const moveDistance = SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN;
+          const ratio = moveDistance / distance;
+          ilwrathSphere.x += dx * ratio;
+          ilwrathSphere.y += dy * ratio;
+        }
+      } else if (ilwrathAttackState.phase === 'fighting') {
+        const ilwrathArea = Math.PI * Math.pow(ilwrathSphere.size, 2);
+        const kohrAhArea = Math.PI * Math.pow(kohrAhSphere.size, 2);
+        const urQuanArea = urQuanSphere ? Math.PI * Math.pow(urQuanSphere.size, 2) : 0;
+
+        const damageArea = SPHERE_DAMAGE_SPEED * DAYS_PER_TURN;
+
+        const newIlwrathArea = Math.max(0, ilwrathArea - damageArea);
+        const newKohrAhArea = Math.max(0, kohrAhArea - (damageArea / 2));
+        const newUrQuanArea = urQuanSphere ? Math.max(0, urQuanArea - (damageArea / 2)) : 0;
+
+        ilwrathSphere.size = Math.sqrt(newIlwrathArea / Math.PI);
+        kohrAhSphere.size = Math.sqrt(newKohrAhArea / Math.PI);
+        if (urQuanSphere) {
+          urQuanSphere.size = Math.sqrt(newUrQuanArea / Math.PI);
+        }
+
+        if (ilwrathSphere.size <= 0) {
+          const index = gameSpheres.findIndex(sphere => sphere.name === 'Ilwrath');
+          if (index !== -1) gameSpheres.splice(index, 1);
+          ilwrathAttackState.active = false;
+          return;
+        }
+
+        if (kohrAhSphere.size <= 0) {
+          const index = gameSpheres.findIndex(sphere => sphere.name === 'Kohr-Ah');
+          if (index !== -1) gameSpheres.splice(index, 1);
+          ilwrathAttackState.active = false;
+          return;
+        }
+
+        if (urQuanSphere && urQuanSphere.size <= 0) {
+          const index = gameSpheres.findIndex(sphere => sphere.name === 'Ur-Quan');
+          if (index !== -1) gameSpheres.splice(index, 1);
+        }
+
+        if (ilwrathSphere.size <= ILWRATH_ATTACK_DAMAGE) {
+          ilwrathAttackState.phase = 'returning';
+          ilwrathAttackState.daysInCurrentPhase = 0;
+        }
+      } else if (ilwrathAttackState.phase === 'returning') {
+        const dx = ilwrathAttackState.originalIlwrathPosition.x - ilwrathSphere.x;
+        const dy = ilwrathAttackState.originalIlwrathPosition.y - ilwrathSphere.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance <= SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN) {
+          ilwrathSphere.x = ilwrathAttackState.originalIlwrathPosition.x;
+          ilwrathSphere.y = ilwrathAttackState.originalIlwrathPosition.y;
+          ilwrathAttackState.active = false;
+        } else {
+          const moveDistance = SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN;
+          const ratio = moveDistance / distance;
+          ilwrathSphere.x += dx * ratio;
+          ilwrathSphere.y += dy * ratio;
+        }
+      }
+    }
+
+    // Функция для запуска атаки Supox и Utwig
+    function startSupoxUtwigAttack() {
+      const supoxSphere = gameSpheres.find(sphere => sphere.name === 'Supox');
+      const utwigSphere = gameSpheres.find(sphere => sphere.name === 'Utwig');
+      const kohrAhSphere = gameSpheres.find(sphere => sphere.name === 'Kohr-Ah');
+
+      if (!supoxSphere || !utwigSphere || !kohrAhSphere) {
+        console.error("Не найдены сферы Supox, Utwig или Kohr-Ah для атаки");
+        return;
+      }
+
+      supoxUtwigAttackState.active = true;
+      supoxUtwigAttackState.phase = 'moving';
+      supoxUtwigAttackState.originalSupoxPosition = {
+        x: supoxSphere.x,
+        y: supoxSphere.y
+      };
+      supoxUtwigAttackState.originalUtwigPosition = {
+        x: utwigSphere.x,
+        y: utwigSphere.y
+      };
+      supoxUtwigAttackState.daysInCurrentPhase = 0;
+    }
+
+    // Функция для обработки атаки Supox и Utwig
+    function processSupoxUtwigAttack() {
+      const supoxIndex = gameSpheres.findIndex(sphere => sphere.name === 'Supox');
+      const utwigIndex = gameSpheres.findIndex(sphere => sphere.name === 'Utwig');
+      const kohrAhIndex = gameSpheres.findIndex(sphere => sphere.name === 'Kohr-Ah');
+
+      if (supoxIndex === -1 || utwigIndex === -1 || kohrAhIndex === -1) {
+        supoxUtwigAttackState.active = false;
+        return;
+      }
+
+      const supoxSphere = gameSpheres[supoxIndex];
+      const utwigSphere = gameSpheres[utwigIndex];
+      const kohrAhSphere = gameSpheres[kohrAhIndex];
+
+      if (supoxSphere.size <= 0) {
+        const index = gameSpheres.findIndex(sphere => sphere.name === 'Supox');
+        if (index !== -1) gameSpheres.splice(index, 1);
+        supoxUtwigAttackState.active = false;
+        return;
+      }
+
+      if (utwigSphere.size <= 0) {
+        const index = gameSpheres.findIndex(sphere => sphere.name === 'Utwig');
+        if (index !== -1) gameSpheres.splice(index, 1);
+        supoxUtwigAttackState.active = false;
+        return;
+      }
+
+      if (kohrAhSphere.size <= 0) {
+        const index = gameSpheres.findIndex(sphere => sphere.name === 'Kohr-Ah');
+        if (index !== -1) gameSpheres.splice(index, 1);
+        supoxUtwigAttackState.active = false;
+        return;
+      }
+
+      supoxUtwigAttackState.daysInCurrentPhase += DAYS_PER_TURN;
+
+      if (supoxUtwigAttackState.phase === 'moving') {
+        const dxToKohrAh = kohrAhSphere.x - supoxSphere.x;
+        const dyToKohrAh = kohrAhSphere.y - supoxSphere.y;
+        const distanceToKohrAh = Math.sqrt(dxToKohrAh * dxToKohrAh + dyToKohrAh * dyToKohrAh);
+
+        if (distanceToKohrAh <= SUPOX_UTWIG_ATTACK_DISTANCE) {
+          supoxUtwigAttackState.phase = 'fighting';
+          supoxUtwigAttackState.daysInCurrentPhase = 0;
+        } else {
+          const moveDistance = SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN;
+          const ratio = moveDistance / distanceToKohrAh;
+
+          supoxSphere.x += dxToKohrAh * ratio;
+          supoxSphere.y += dyToKohrAh * ratio;
+
+          utwigSphere.x += dxToKohrAh * ratio;
+          utwigSphere.y += dyToKohrAh * ratio;
+        }
+      } else if (supoxUtwigAttackState.phase === 'fighting') {
+        const supoxArea = Math.PI * Math.pow(supoxSphere.size, 2);
+        const utwigArea = Math.PI * Math.pow(utwigSphere.size, 2);
+        const kohrAhArea = Math.PI * Math.pow(kohrAhSphere.size, 2);
+
+        const damageArea = SPHERE_DAMAGE_SPEED * DAYS_PER_TURN;
+
+        const newUtwigArea = Math.max(0, utwigArea - damageArea);
+        const newKohrAhArea = Math.max(0, kohrAhArea - damageArea);
+        const newSupoxArea = Math.max(0, supoxArea - (damageArea / SUPOX_DAMAGE_REDUCTION_FACTOR));
+
+        supoxSphere.size = Math.sqrt(newSupoxArea / Math.PI);
+        utwigSphere.size = Math.sqrt(newUtwigArea / Math.PI);
+        kohrAhSphere.size = Math.sqrt(newKohrAhArea / Math.PI);
+
+        if (supoxSphere.size <= 0) {
+          const index = gameSpheres.findIndex(sphere => sphere.name === 'Supox');
+          if (index !== -1) gameSpheres.splice(index, 1);
+          supoxUtwigAttackState.active = false;
+          return;
+        }
+
+        if (utwigSphere.size <= 0) {
+          const index = gameSpheres.findIndex(sphere => sphere.name === 'Utwig');
+          if (index !== -1) gameSpheres.splice(index, 1);
+          supoxUtwigAttackState.active = false;
+          return;
+        }
+
+        if (kohrAhSphere.size <= 0) {
+          const index = gameSpheres.findIndex(sphere => sphere.name === 'Kohr-Ah');
+          if (index !== -1) gameSpheres.splice(index, 1);
+          supoxUtwigAttackState.active = false;
+          return;
+        }
+
+        if (utwigSphere.size <= SUPOX_UTWIG_ATTACK_DAMAGE) {
+          supoxUtwigAttackState.phase = 'returning';
+          supoxUtwigAttackState.daysInCurrentPhase = 0;
+        }
+      } else if (supoxUtwigAttackState.phase === 'returning') {
+        const dxToOriginalSupox = supoxUtwigAttackState.originalSupoxPosition.x - supoxSphere.x;
+        const dyToOriginalSupox = supoxUtwigAttackState.originalSupoxPosition.y - supoxSphere.y;
+        const distanceToOriginalSupox = Math.sqrt(dxToOriginalSupox * dxToOriginalSupox + dyToOriginalSupox * dyToOriginalSupox);
+
+        const dxToOriginalUtwig = supoxUtwigAttackState.originalUtwigPosition.x - utwigSphere.x;
+        const dyToOriginalUtwig = supoxUtwigAttackState.originalUtwigPosition.y - utwigSphere.y;
+        const distanceToOriginalUtwig = Math.sqrt(dxToOriginalUtwig * dxToOriginalUtwig + dyToOriginalUtwig * dyToOriginalUtwig);
+
+        if (distanceToOriginalSupox <= SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN &&
+            distanceToOriginalUtwig <= SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN) {
+          supoxSphere.x = supoxUtwigAttackState.originalSupoxPosition.x;
+          supoxSphere.y = supoxUtwigAttackState.originalSupoxPosition.y;
+          utwigSphere.x = supoxUtwigAttackState.originalUtwigPosition.x;
+          utwigSphere.y = supoxUtwigAttackState.originalUtwigPosition.y;
+          supoxUtwigAttackState.active = false;
+        } else {
+          const moveDistance = SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN;
+
+          if (distanceToOriginalSupox > 0) {
+            const ratioSupox = moveDistance / distanceToOriginalSupox;
+            supoxSphere.x += dxToOriginalSupox * ratioSupox;
+            supoxSphere.y += dyToOriginalSupox * ratioSupox;
+          }
+
+          if (distanceToOriginalUtwig > 0) {
+            const ratioUtwig = moveDistance / distanceToOriginalUtwig;
+            utwigSphere.x += dxToOriginalUtwig * ratioUtwig;
+            utwigSphere.y += dyToOriginalUtwig * ratioUtwig;
+          }
+        }
+      }
+    }
+
+    // Функция для запуска засады Mycon
+    function startMyconAmbush() {
+      const myconSphere = gameSpheres.find(sphere => sphere.name === 'Mycon');
+
+      if (!myconSphere) {
+        console.error("Не найдена сфера Mycon для засады");
+        return;
+      }
+
+      myconAmbushState.active = true;
+      myconAmbushState.phase = 'moving';
+      myconAmbushState.originalMyconPosition = {
+        x: myconSphere.x,
+        y: myconSphere.y
+      };
+      myconAmbushState.daysInCurrentPhase = 0;
+    }
+
+// Функция для обработки засады Mycon
+function processMyconAmbush() {
+  // Находим индекс сферы Mycon в массиве
+  const myconIndex = gameSpheres.findIndex(sphere => sphere.name === 'Mycon');
+  // Находим индекс сферы Syreen в массиве
+  const syreenIndex = gameSpheres.findIndex(sphere => sphere.name === 'Syreen');
+
+  // Проверяем, существует ли сфера Mycon
+  if (myconIndex === -1) {
+    myconAmbushState.active = false;
+    return;
+  }
+
+  const myconSphere = gameSpheres[myconIndex];
+  const syreenSphere = syreenIndex !== -1 ? gameSpheres[syreenIndex] : null;
+
+  // Проверяем, не уничтожена ли сфера
+  if (myconSphere.size <= 0) {
+    const index = gameSpheres.findIndex(sphere => sphere.name === 'Mycon');
+    if (index !== -1) gameSpheres.splice(index, 1);
+    myconAmbushState.active = false;
+    return;
+  }
+
+  myconAmbushState.daysInCurrentPhase += DAYS_PER_TURN;
+
+  if (myconAmbushState.phase === 'moving') {
+    // Движение к цели (Organon)
+    const dx = MYCON_AMBUSH_TARGET[0] - myconSphere.x;
+    const dy = MYCON_AMBUSH_TARGET[1] - myconSphere.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance <= SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN) {
+      // Достигли цели, переходим к фазе боя
+      myconSphere.x = MYCON_AMBUSH_TARGET[0];
+      myconSphere.y = MYCON_AMBUSH_TARGET[1];
+      myconAmbushState.phase = 'fighting';
+      myconAmbushState.daysInCurrentPhase = 0;
+    } else {
+      // Продолжаем движение
+      const moveDistance = SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN;
+      const ratio = moveDistance / distance;
+      myconSphere.x += dx * ratio;
+      myconSphere.y += dy * ratio;
+    }
+  } else if (myconAmbushState.phase === 'fighting') {
+    // Вычисляем текущую площадь Mycon
+    const myconArea = Math.PI * Math.pow(myconSphere.size, 2);
+    const damageArea = SPHERE_DAMAGE_SPEED * DAYS_PER_TURN;
+
+    // Уменьшаем площадь Mycon
+    const newMyconArea = Math.max(0, myconArea - damageArea);
+
+    // ВЫЧИСЛЯЕМ площадь, которую потерял Mycon
+    const lostMyconArea = myconArea - newMyconArea;
+
+    // Обновляем размер Mycon
+    myconSphere.size = Math.sqrt(newMyconArea / Math.PI);
+
+    // ЕСЛИ СФЕРА SYREEN СУЩЕСТВУЕТ, увеличиваем её площадь на половину потерянной площади Mycon
+    if (syreenSphere && lostMyconArea > 0) {
+      const syreenArea = Math.PI * Math.pow(syreenSphere.size, 2);
+      const newSyreenArea = syreenArea + (lostMyconArea / 2);
+      syreenSphere.size = Math.sqrt(newSyreenArea / Math.PI);
+    }
+
+    // Проверяем, не уничтожена ли сфера после боя
+    if (myconSphere.size <= 0) {
+      const index = gameSpheres.findIndex(sphere => sphere.name === 'Mycon');
+      if (index !== -1) gameSpheres.splice(index, 1);
+      myconAmbushState.active = false;
+      return;
+    }
+
+    // Проверяем, не стал ли радиус Mycon меньше порога повреждений
+    if (myconSphere.size <= MYCON_AMBUSH_DAMAGE) {
+      myconAmbushState.phase = 'returning';
+      myconAmbushState.daysInCurrentPhase = 0;
+    }
+  } else if (myconAmbushState.phase === 'returning') {
+    // Возвращение к исходной позиции
+    const dx = myconAmbushState.originalMyconPosition.x - myconSphere.x;
+    const dy = myconAmbushState.originalMyconPosition.y - myconSphere.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance <= SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN) {
+      // Достигли исходной позиции
+      myconSphere.x = myconAmbushState.originalMyconPosition.x;
+      myconSphere.y = myconAmbushState.originalMyconPosition.y;
+
+      // === АВТОМАТИЧЕСКИЙ АЛЬЯНС С SYREEN ===
+      newAllianceAllies.Syreen = true; // Добавляем Syreen в союзники
+      updateNewAllianceSphere(); // Обновляем сферу Нового Альянса
+
+      myconAmbushState.active = false; // Завершаем засаду
+    } else {
+      // Продолжаем движение
+      const moveDistance = SPHERE_MOVEMENT_SPEED * DAYS_PER_TURN;
+      const ratio = moveDistance / distance;
+      myconSphere.x += dx * ratio;
+      myconSphere.y += dy * ratio;
+    }
+  }
+}
+
+    // Функция для создания сфер Earthling и New Alliance
+    function createEarthlingAndNewAllianceSpheres() {
+      const earthlingFromSC1 = initialSphereData.oldSpheres.find(sphere => sphere.name === 'Earthling');
+
+      if (earthlingFromSC1) {
+        const earthlingSphere = {
+          name: 'Earthling',
+          x: earthlingFromSC1.x,
+          y: earthlingFromSC1.y,
+          size: EARTHLING_INITIAL_RADIUS,
+          color: COLOR_EARTHLING
+        };
+
+        const newAllianceSphere = {
+          name: NEW_ALLIANCE_NAME,
+          x: earthlingFromSC1.x,
+          y: earthlingFromSC1.y,
+          size: NEW_ALLIANCE_INITIAL_RADIUS,
+          color: COLOR_NEW_ALLIANCE
+        };
+
+        gameSpheres.push(earthlingSphere);
+        gameSpheres.push(newAllianceSphere);
+      }
+    }
+
+    // Функция для создания альянса с Zoq-Fot-Pik
+    function createZoqFotPikAlliance() {
+      newAllianceAllies.ZoqFotPik = true;
+      updateNewAllianceSphere();
+    }
+
+    // Функция для создания альянса с Orz
+    function createOrzAlliance() {
+      newAllianceAllies.Orz = true;
+      updateNewAllianceSphere();
+    }
+
+    // Функция для создания альянса с Thraddash
+    function createThraddashAlliance() {
+      newAllianceAllies.Thraddash = true;
+      updateNewAllianceSphere();
+    }
+
+    // Функция для возврата флота Syreen (создание сферы)
+    function createSyreenFleetReturn() {
+      const spathiFromSC1 = initialSphereData.oldSpheres.find(sphere => sphere.name === 'Vux');
+
+      const newSyreenSphere = {
+        name: 'Syreen',
+        x: SYREEN_INITIAL_POSITION[0],
+        y: SYREEN_INITIAL_POSITION[1],
+        size: SYREEN_INITIAL_RADIUS,
+        color: spathiFromSC1 ? spathiFromSC1.color : '#FFFFFF'
+      };
+
+      gameSpheres.push(newSyreenSphere);
+      updateNewAllianceSphere();
+    }
+
+    // Функция для создания альянса с Supox и Utwig
+    function createSupoxUtwigAlliance() {
+      newAllianceAllies.SupoxUtwig = true;
+      updateNewAllianceSphere();
+    }
+
+    // Функция для возрождения Shofixti
+    function createShofixtiRevival() {
+      newAllianceAllies.Shofixti = true;
+
+      const shofixtiFromSC1 = initialSphereData.oldSpheres.find(sphere => sphere.name === 'Shofixti');
+
+      if (shofixtiFromSC1) {
+        const newShofixtiSphere = {
+          name: 'Shofixti',
+          x: shofixtiFromSC1.x,
+          y: shofixtiFromSC1.y,
+          size: SHOFIXTI_REVIVED_RADIUS,
+          color: shofixtiFromSC1.color
+        };
+
+        gameSpheres.push(newShofixtiSphere);
+      }
+
+      updateNewAllianceSphere();
+    }
+
+    // Функция для создания альянса с Chmmr
+    function createChmmrAlliance() {
+      newAllianceAllies.Chmmr = true;
+
+      const chenjesuFromSC1 = initialSphereData.oldSpheres.find(sphere => sphere.name === 'Chenjesu');
+
+      if (chenjesuFromSC1) {
+        const newChmmrSphere = {
+          name: 'Chmmr',
+          x: chenjesuFromSC1.x,
+          y: chenjesuFromSC1.y,
+          size: CHMMR_INITIAL_RADIUS,
+          color: chenjesuFromSC1.color
+        };
+
+        gameSpheres.push(newChmmrSphere);
+      }
+
+      updateNewAllianceSphere();
+    }
+
+    // Функция для создания альянса с Black Squadron
+    function createBlackSquadronAlliance() {
+      newAllianceAllies.BlackSquadron = true;
+
+      const spathiFromSC1 = initialSphereData.oldSpheres.find(sphere => sphere.name === 'Spathi');
+
+      if (spathiFromSC1) {
+        const newBlackSquadronSphere = {
+          name: BLACK_SQUADRON_NAME,
+          x: spathiFromSC1.x,
+          y: spathiFromSC1.y,
+          size: spathiFromSC1.size,
+          color: COLOR_BLACK_SQUADRON
+        };
+
+        gameSpheres.push(newBlackSquadronSphere);
+      }
+
+      updateNewAllianceSphere();
+    }
+
+    // Функция для починки Mother-Ark и создания альянса с Mmrnmhrm
+    function createMotherArkRepair() {
+      newAllianceAllies.Mmrnmhrm = true;
+
+      const mmrnmhrmFromSC1 = initialSphereData.oldSpheres.find(sphere => sphere.name === 'Mmrnmhrm');
+
+      if (mmrnmhrmFromSC1) {
+        const newMmrnmhrmSphere = {
+          name: 'Mmrnmhrm',
+          x: mmrnmhrmFromSC1.x,
+          y: mmrnmhrmFromSC1.y,
+          size: MMRNMHRM_REVIVED_RADIUS,
+          color: mmrnmhrmFromSC1.color
+        };
+
+        gameSpheres.push(newMmrnmhrmSphere);
+      }
+
+      updateNewAllianceSphere();
+    }
+
+    function hexToRgba(hex, a=1){
+      const h = String(hex || '#000000').replace('#','');
+      const n = parseInt(h,16) || 0;
+      return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
+    }
+
+    function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+    const sizeMap = {'Dwarf':3,'Giant':6,'Super-Giant':10};
+
+    const rawNamed = (Array.isArray(window.namedStars) && window.namedStars.length) ? window.namedStars : [];
+
+    function isValidColor(c){ return Object.keys(colors).includes(c); }
+    function isValidSize(s){ return Object.keys(sizeMap).includes(s); }
+
+    const stars = rawNamed.map(entry => {
+      const [x,y,color,sizeLabel,letter,constellation] = Array.isArray(entry) ? entry : [];
+      const nx = clamp(Number(x) || 0, 0, BASE_MAP_SIZE) / BASE_MAP_SIZE;
+      const ny = clamp(Number(y) || 0, 0, BASE_MAP_SIZE) / BASE_MAP_SIZE;
+      const c = isValidColor(color) ? color : 'White';
+      const s = isValidSize(sizeLabel) ? sizeLabel : 'Dwarf';
+      return {
+        xNorm: nx,
+        yNorm: ny,
+        color: c,
+        sizeLabel: s,
+        letter: letter || '',
+        constellation: constellation || '',
+        baseSize: sizeMap[s],
+        colorHex: (colors[c] && colors[c][0]) || '#FFFFFF'
+      };
+    });
+
+    const canvas = document.getElementById('starMap');
+    const ctx = canvas.getContext('2d');
+    const mapContainer = document.getElementById('mapContainer');
+
+    // Функция для обновления размеров canvas
+    function updateCanvasSize() {
+      const containerWidth = mapContainer.clientWidth;
+      const containerHeight = mapContainer.clientHeight;
+
+      const prevScale = scale;
+      const prevOffsetX = offsetX;
+      const prevOffsetY = offsetY;
+
+      canvas.width = containerWidth;
+      canvas.height = containerHeight;
+
+      scale = prevScale;
+      offsetX = prevOffsetX;
+      offsetY = prevOffsetY;
+
+      renderAll(currentHighlight);
+    }
+
+    function drawGrid(){
+      ctx.strokeStyle='lightgray';
+      ctx.lineWidth=0.5;
+      const stepX = BASE_MAP_SIZE / GRID_DIVISIONS;
+      const stepY = BASE_MAP_SIZE / GRID_DIVISIONS;
+      for(let x=0;x<=BASE_MAP_SIZE;x+=stepX){
+        ctx.beginPath();
+        ctx.moveTo(x,0);
+        ctx.lineTo(x,BASE_MAP_SIZE);
+        ctx.stroke();
+      }
+      for(let y=0;y<=BASE_MAP_SIZE;y+=stepY){
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(BASE_MAP_SIZE, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawStarAtPixel(px,py,size,colorHex,highlight=false){
+      const cx = Number(px);
+      const cy = Number(py);
+      const outer = Math.max(3, size * (highlight ? STAR_HIGHLIGHT_MULTIPLIER : STAR_NORMAL_MULTIPLIER));
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, outer);
+      g.addColorStop(0, hexToRgba(colorHex,1));
+      g.addColorStop(0.25, hexToRgba(colorHex,0.7));
+      g.addColorStop(0.6, hexToRgba(colorHex,0.15));
+      g.addColorStop(1, hexToRgba('#000000',0));
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(cx, cy, outer, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = colorHex || '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(cx, cy, Math.max(0.6, size * (highlight ? 1.25 : 1)), 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    function drawStarLabel(logicalX, logicalY, letter, constellation, scale) {
+    const screenX = logicalX * scale + offsetX;
+    const screenY = logicalY * scale + offsetY;
+
+    const screenCenterX = canvas.width / 2;
+    const screenCenterY = canvas.height / 2;
+
+    const offset = STAR_LABEL_OFFSET;
+
+    let textAlign = 'left';
+    let textBaseline = 'bottom';
+    let textX = screenX + offset;
+    let textY = screenY - offset;
+
+    const isLeft = screenX < screenCenterX;
+    const isTop = screenY < screenCenterY;
+
+    if (isLeft) {
+        textAlign = 'left';
+        textX = screenX + offset;
+    } else {
+        textAlign = 'right';
+        textX = screenX - offset;
+    }
+
+    if (isTop) {
+        textBaseline = 'top';
+        textY = screenY + offset;
+    } else {
+        textBaseline = 'bottom';
+        textY = screenY - offset;
+    }
+
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.font = '20px sans-serif';
+    ctx.textAlign = textAlign;
+    ctx.textBaseline = textBaseline;
+    ctx.fillText(`${letter} ${constellation}`, textX, textY);
+    ctx.restore();
+}
+
+    function drawTextAlongArc(ctx, text, centerX, centerY, radius, angle) {
+      const totalWidth = ctx.measureText(text).width;
+      const avgCharWidth = totalWidth / text.length;
+
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const charPosition = (i - (text.length - 1) / 2);
+        const charAngle = angle + (charPosition * (avgCharWidth / radius));
+
+        const x = centerX + Math.cos(charAngle) * radius;
+        const y = centerY + Math.sin(charAngle) * radius;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(charAngle + Math.PI / 2);
+        ctx.fillText(char, 0, 0);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    function normToPixel(xNorm, yNorm){
+      return {
+        x: xNorm * BASE_MAP_SIZE,
+        y: (1 - yNorm) * BASE_MAP_SIZE
+      };
+    }
+
+    function getTextPosition(centerXNorm, centerYNorm, radius) {
+      const positionType = document.getElementById('textPosition').value;
+
+      if (positionType === 'auto') {
+        const centerX = centerXNorm * BASE_MAP_SIZE;
+        const centerY = centerYNorm * BASE_MAP_SIZE;
+
+        const leftEdge = centerX - radius;
+        const rightEdge = centerX + radius;
+        const topEdge = centerY - radius;
+        const bottomEdge = centerY + radius;
+
+        const isLeftCropped = leftEdge < 0;
+        const isRightCropped = rightEdge > BASE_MAP_SIZE;
+        const isTopCropped = topEdge < 0;
+        const isBottomCropped = bottomEdge > BASE_MAP_SIZE;
+
+        if (isLeftCropped && !isRightCropped) {
+          return -Math.PI/2 + Math.PI/4;
+        } else if (isRightCropped && !isLeftCropped) {
+          return -Math.PI/2 - Math.PI/4;
+        } else {
+          return -Math.PI/2;
+        }
+      }
+
+      if (positionType === 'counterclockwise') {
+        return -Math.PI/2 - Math.PI/4;
+      } else if (positionType === 'clockwise') {
+        return -Math.PI/2 + Math.PI/4;
+      } else {
+        return -Math.PI/2;
+      }
+    }
+
+    function drawInfluenceSphere(centerXNorm, centerYNorm, radius, colorHex, name = null) {
+      const center = normToLogicalPixel(centerXNorm, centerYNorm);
+
+      ctx.save();
+      ctx.strokeStyle = hexToRgba(colorHex, 0.7);
+      ctx.fillStyle = hexToRgba(colorHex, 0.1);
+      ctx.lineWidth = 2 / scale;
+
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      if (name && name.trim() !== "") {
+        ctx.save();
+        ctx.fillStyle = colorHex;
+        ctx.font = 'bold ' + (24 / scale) + 'px Arial';
+
+        const textAngle = getTextPosition(centerXNorm, centerYNorm, radius);
+
+        drawTextAlongArc(ctx, name, center.x, center.y, radius + SPHERE_LABEL_OFFSET, textAngle);
+
+        ctx.restore();
+      }
+    }
+
+    function normToLogicalPixel(xNorm, yNorm){
+      const p = normToPixel(xNorm, yNorm);
+      return { x: p.x, y: p.y };
+    }
+
+    function logicalWidth(){ return BASE_MAP_SIZE; }
+    function logicalHeight(){ return BASE_MAP_SIZE; }
+
+    function screenToLogical(clientX, clientY){
+      const rect = canvas.getBoundingClientRect();
+      const sx = (clientX - rect.left) * (canvas.width / rect.width);
+      const sy = (clientY - rect.top) * (canvas.height / rect.height);
+      return { x: (sx - offsetX) / scale, y: (sy - offsetY) / scale };
+    }
+
+    let scale = 1;
+    let offsetX = 0;
+    let offsetY = 0;
+    let currentHighlight = -1;
+
+    let renderAll = function(highlightIndex = -1){
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      const containerWidth = canvas.width;
+      const containerHeight = canvas.height;
+      const aspectRatio = containerWidth / containerHeight;
+      const mapAspectRatio = BASE_MAP_SIZE / BASE_MAP_SIZE;
+
+      let renderScale = scale;
+      let renderOffsetX = offsetX;
+      let renderOffsetY = offsetY;
+
+      if (scale === 1 && offsetX === 0 && offsetY === 0) {
+        if (aspectRatio > mapAspectRatio) {
+          renderScale = containerHeight / BASE_MAP_SIZE;
+          renderOffsetX = (containerWidth - BASE_MAP_SIZE * renderScale) / 2;
+        } else {
+          renderScale = containerWidth / BASE_MAP_SIZE;
+          renderOffsetY = (containerHeight - BASE_MAP_SIZE * renderScale) / 2;
+        }
+
+        scale = renderScale;
+        offsetX = renderOffsetX;
+        offsetY = renderOffsetY;
+      }
+
+      ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0,0, logicalWidth()/scale, logicalHeight()/scale);
+
+      ctx.save();
+      ctx.lineWidth = 0.5 / scale;
+      ctx.strokeStyle = 'lightgray';
+      const stepX = logicalWidth() / GRID_DIVISIONS;
+      const stepY = logicalHeight() / GRID_DIVISIONS;
+      for(let x=0;x<=logicalWidth(); x+=stepX){
+        ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x, logicalHeight()); ctx.stroke();
+      }
+      for(let y=0;y<=logicalHeight(); y+=stepY){
+        ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(logicalWidth(), y); ctx.stroke();
+      }
+      ctx.restore();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, BASE_MAP_SIZE, BASE_MAP_SIZE);
+      ctx.clip();
+
+      const sphereType = document.getElementById('sphereType').value;
+
+      // ========== ОБНОВЛЕННАЯ ЛОГИКА ОТОБРАЖЕНИЯ СФЕР ==========
+      if (sphereType === 'newSpheres') {
+        // Отображаем игровые сферы (изменяемые)
+        for (const sphere of gameSpheres) {
+          if (!sphere.name && !sphere.color && sphere.x === 0 && sphere.y === 0 && sphere.size === 0) continue;
+
+          const xNorm = sphere.x / BASE_MAP_SIZE;
+          const yNorm = sphere.y / BASE_MAP_SIZE;
+
+          const color = sphere.color || '#FFFFFF';
+
+          drawInfluenceSphere(xNorm, yNorm, sphere.size, color, sphere.name);
+        }
+      } else if (sphereType === 'initialNewSpheres') {
+        // Отображаем исходные сферы Star Control 2 (неизменяемые)
+        for (const sphere of initialSphereData.newSpheres) {
+          if (!sphere.name && !sphere.color && sphere.x === 0 && sphere.y === 0 && sphere.size === 0) continue;
+
+          const xNorm = sphere.x / BASE_MAP_SIZE;
+          const yNorm = sphere.y / BASE_MAP_SIZE;
+
+          const color = sphere.color || '#FFFFFF';
+
+          drawInfluenceSphere(xNorm, yNorm, sphere.size, color, sphere.name);
+        }
+      } else if (sphereType === 'oldSpheres') {
+        // Отображаем старые сферы (неизменяемые)
+        for (const sphere of initialSphereData.oldSpheres) {
+          if (!sphere.name && !sphere.color && sphere.x === 0 && sphere.y === 0 && sphere.size === 0) continue;
+
+          const xNorm = sphere.x / BASE_MAP_SIZE;
+          const yNorm = sphere.y / BASE_MAP_SIZE;
+
+          const color = sphere.color || '#FFFFFF';
+
+          drawInfluenceSphere(xNorm, yNorm, sphere.size, color, sphere.name);
+        }
+      }
+      // Для 'none' ничего не отображаем
+
+      const indices = stars.map((_,i)=>i);
+      indices.sort((a,b)=>{
+        const sa = stars[a].baseSize, sb = stars[b].baseSize;
+        return sb - sa;
+      });
+
+      for(let idx of indices){
+        const s = stars[idx];
+        const p = normToLogicalPixel(s.xNorm, s.yNorm);
+        const scaleForSize = canvas.height / BASE_MAP_SIZE;
+        const computedSize = Math.max(1, s.baseSize * scaleForSize);
+        const isHighlight = (idx === highlightIndex);
+        drawStarAtPixel(p.x, p.y, computedSize, s.colorHex, isHighlight);
+      }
+
+      if(highlightIndex >= 0 && stars[highlightIndex]){
+        const s = stars[highlightIndex];
+        const p = normToLogicalPixel(s.xNorm, s.yNorm);
+        drawStarLabel(p.x, p.y, s.letter, s.constellation, scale);
+      }
+
+      ctx.restore();
+
+      ctx.setTransform(1,0,0,1,0,0);
+    };
+
+    function findStarAtLogical(x, y, radius = STAR_HOVER_RADIUS) {
+      let best = -1;
+      let bestDist2 = radius * radius;
+
+      for(let i = 0; i < stars.length; i++) {
+        const s = stars[i];
+        const p = normToLogicalPixel(s.xNorm, s.yNorm);
+        const dx = p.x - x;
+        const dy = p.y - y;
+        const d2 = dx*dx + dy*dy;
+
+        if(d2 <= bestDist2) {
+          bestDist2 = d2;
+          best = i;
+        }
+      }
+
+      return best;
+    }
+
+    canvas.addEventListener('mousemove', (e)=>{
+      const logical = screenToLogical(e.clientX, e.clientY);
+      const found = findStarAtLogical(logical.x, logical.y, STAR_HOVER_RADIUS/scale);
+
+      if(found !== currentHighlight) {
+        currentHighlight = found;
+        renderAll(currentHighlight);
+      }
+    });
+
+    canvas.addEventListener('mouseleave', ()=>{
+      currentHighlight = -1;
+      renderAll(-1);
+    });
+
+    let isPanning = false;
+    let panStart = { x: 0, y: 0 };
+    let panOffsetStart = { x: 0, y: 0 };
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      isPanning = true;
+      const rect = canvas.getBoundingClientRect();
+      panStart.x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      panStart.y = (e.clientY - rect.top) * (canvas.height / rect.height);
+      panOffsetStart.x = offsetX;
+      panOffsetStart.y = offsetY;
+      e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isPanning) return;
+      const rect = canvas.getBoundingClientRect();
+      const curX = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const curY = (e.clientY - rect.top) * (canvas.height / rect.height);
+      offsetX = panOffsetStart.x + (curX - panStart.x);
+      offsetY = panOffsetStart.y + (curY - panStart.y);
+      renderAll(currentHighlight);
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      if (e.button !== 0) return;
+      if (!isPanning) return;
+      isPanning = false;
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+    });
+
+    canvas.addEventListener('wheel', (e)=>{
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+      const delta = e.deltaY;
+      const factor = 1 - delta * ZOOM_STEP;
+      const newScale = clamp(scale * factor, MIN_SCALE, MAX_SCALE);
+      const actualFactor = newScale / scale;
+
+      offsetX = mouseX - (mouseX - offsetX) * actualFactor;
+      offsetY = mouseY - (mouseY - offsetY) * actualFactor;
+
+      scale = newScale;
+      renderAll(currentHighlight);
+    }, { passive: false });
+
+    document.getElementById('sphereType').addEventListener('change', () => {
+      renderAll(currentHighlight);
+    });
+
+    document.getElementById('textPosition').addEventListener('change', () => {
+      renderAll(currentHighlight);
+    });
+
+    document.getElementById('nextTurnButton').addEventListener('click', nextTurn);
+
+    window.addEventListener('resize', () => {
+      updateCanvasSize();
+    });
+
+    window.addEventListener('load', () => {
+        updateCanvasSize();
+        updateDateDisplay();
+        initializeCheckboxes();
+    });
+  </script>
+</body>
+</html>
