@@ -75,7 +75,7 @@ Bigger Snack Strategy — Стратегия Большого Перекуса?
 — Не знаю, в какую дыру вы забрались, но я уже иду за вами!
 
 ------------
-продолжение тут - https://github.com/bazhenov-ai/lib/blob/main/bss/bss.txt
+продолжение тут - https://github.com/bazhenov-ai/lib/blob/main/bss/bss.md
 ------------
 
 Баженов А.И.
